@@ -6,7 +6,6 @@
   <title>FileShare Pro - UI Preview</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* === GLOBAL STYLES & VARIABLES === */
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', system-ui, sans-serif; }
     :root {
       --primary:#4a6cfa; --primary-dark:#2d4bcc; --secondary:#ff6b6b;
@@ -41,6 +40,8 @@
     .progress-bar { background:var(--primary); height:100%; border-radius:10px; }
 
     footer { text-align:center; margin-top:40px; font-size:0.9rem; color:var(--gray); }
+    ul { list-style:none; padding:0; }
+    ul li { background:rgba(255,255,255,0.1); margin:5px; padding:10px; border-radius:8px; }
   </style>
 </head>
 <body>
@@ -63,6 +64,11 @@
       <div class="action-btn"><div class="action-icon"><i class="fas fa-tools"></i></div><span class="action-label">Tools</span></div>
       <div class="action-btn"><div class="action-icon"><i class="fas fa-shield-alt"></i></div><span class="action-label">Security</span></div>
     </div>
+
+    <!-- Upload Files -->
+    <div class="section-title"><i class="fas fa-upload"></i> Upload Files</div>
+    <input type="file" id="fileInput" multiple>
+    <ul id="fileList"></ul>
 
     <!-- Recent Files -->
     <div class="section-title"><i class="fas fa-file"></i> Recent Files</div>
@@ -102,4 +108,4 @@
     <div class="quick-actions">
       <div class="action-btn"><div class="action-icon" style="background:#4a6cfa;"><i class="fas fa-wifi"></i></div><span class="action-label">Wi-Fi Direct</span></div>
       <div class="action-btn"><div class="action-icon" style="background:#ff6b6b;"><i class="fas fa-bluetooth-b"></i></div><span class="action-label">Bluetooth 5.3</span></div>
-      <div class="
+      <div class="action-btn"><div class="action-icon
