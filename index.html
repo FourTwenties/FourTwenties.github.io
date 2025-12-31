@@ -1,86 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FileShare Pro – P2P</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>FileShare Pro – P2P (Auto signaling)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
       --primary:#4a6cfa; --primary-dark:#2d4bcc; --secondary:#ff6b6b;
       --success:#20c997; --warning:#ff922b; --dark:#1a1d28; --darker:#131620;
-      --light:#f8f9fa; --gray:#6c757d; --surface:#252a3f; --surface-light:#2e344e;
-      --card-bg:rgba(255,255,255,0.05); --card-border:rgba(255,255,255,0.1);
+      --light:#f8f9fa; --gray:#6c757d; --card-bg:rgba(255,255,255,0.06);
+      --card-border:rgba(255,255,255,0.12);
     }
     * { box-sizing:border-box; }
-    body { margin:0; background:linear-gradient(135deg,var(--darker),var(--dark)); color:var(--light); font-family:'Segoe UI', system-ui, sans-serif; line-height:1.6; padding:20px; }
+    body { margin:0; background:linear-gradient(135deg,var(--darker),var(--dark)); color:var(--light); font-family:'Segoe UI',system-ui,sans-serif; line-height:1.6; padding:20px; }
     .container { max-width:1000px; margin:0 auto; }
     header { display:flex; justify-content:space-between; align-items:center; padding:10px 0 20px; }
     .logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.6rem; }
     .card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px; padding:18px; backdrop-filter:blur(8px); margin-bottom:18px; }
     .section-title { display:flex; align-items:center; gap:10px; font-size:1.2rem; margin:10px 0 14px; }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-    textarea, input[type="text"] { width:100%; background:rgba(255,255,255,0.08); color:var(--light); border:1px solid var(--card-border); border-radius:10px; padding:10px; font-family:inherit; }
-    textarea { min-height:140px; }
+    input[type="text"], input[type="number"] {
+      width:100%; background:rgba(255,255,255,0.08); color:var(--light);
+      border:1px solid var(--card-border); border-radius:10px; padding:10px; font-family:inherit;
+    }
+    .inline { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .btn { background:var(--primary); color:#fff; border:none; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer; transition:.2s; display:inline-flex; align-items:center; gap:8px; }
     .btn:hover { background:var(--primary-dark); transform:translateY(-1px); }
     .btn-outline { background:transparent; color:var(--primary); border:2px solid var(--primary); }
-    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
     .pill { display:inline-block; background:rgba(255,255,255,0.1); padding:6px 10px; border-radius:999px; font-size:.9rem; }
     progress { width:100%; height:10px; border-radius:10px; overflow:hidden; }
     progress::-webkit-progress-bar { background:rgba(255,255,255,0.1); border-radius:10px; }
     progress::-webkit-progress-value { background:var(--primary); border-radius:10px; }
-    footer { text-align:center; color:var(--gray); margin-top:24px; }
-    .muted { color:var(--gray); font-size:.9rem; }
     .file-list { list-style:none; padding:0; margin:0; }
     .file-list li { background:rgba(255,255,255,0.08); border:1px solid var(--card-border); border-radius:10px; padding:10px; margin-bottom:8px; }
-    .inline { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    code { background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:6px; }
+    footer { text-align:center; color:var(--gray); margin-top:24px; }
+    .muted { color:var(--gray); font-size:.95rem; }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <div class="logo"><i class="fas fa-share-alt"></i> FileShare Pro</div>
-      <div class="pill"><i class="fas fa-plug"></i> P2P via WebRTC</div>
+      <div class="pill"><i class="fas fa-plug"></i> P2P via WebRTC + Firebase signaling</div>
     </header>
 
-    <!-- Role selection -->
+    <!-- Join room -->
     <div class="card">
-      <div class="section-title"><i class="fas fa-user-check"></i> Choose role</div>
-      <div class="inline">
-        <label class="pill"><input type="radio" name="role" value="sender" checked> Sender</label>
-        <label class="pill"><input type="radio" name="role" value="receiver"> Receiver</label>
+      <div class="section-title"><i class="fas fa-door-open"></i> Join a room</div>
+      <div class="row">
+        <div>
+          <label class="muted">Room ID</label>
+          <input type="text" id="roomId" placeholder="e.g. myst-room-123"/>
+        </div>
+        <div>
+          <label class="muted">Role</label>
+          <div class="inline">
+            <label class="pill"><input type="radio" name="role" value="caller" checked> Caller</label>
+            <label class="pill"><input type="radio" name="role" value="callee"> Callee</label>
+          </div>
+        </div>
       </div>
-      <p class="muted">Sender creates the offer; receiver creates the answer. Exchange the texts below to connect.</p>
+      <div class="inline" style="margin-top:10px;">
+        <button id="joinBtn" class="btn"><i class="fas fa-link"></i> Join</button>
+        <button id="leaveBtn" class="btn btn-outline"><i class="fas fa-sign-out-alt"></i> Leave</button>
+      </div>
+      <p class="muted">Both users type the same Room ID. One is Caller, the other is Callee. No copy–paste of codes needed.</p>
     </div>
 
-    <!-- Signaling -->
-    <div class="row">
-      <div class="card">
-        <div class="section-title"><i class="fas fa-signal"></i> Local description (generate here)</div>
-        <div class="inline" style="gap:10px;">
-          <button id="createOfferBtn" class="btn"><i class="fas fa-paper-plane"></i> Create offer</button>
-          <button id="createAnswerBtn" class="btn"><i class="fas fa-reply"></i> Create answer</button>
-          <button id="copyLocalBtn" class="btn btn-outline"><i class="fas fa-copy"></i> Copy</button>
-        </div>
-        <textarea id="localSdp" placeholder="Generated SDP will appear here…"></textarea>
-        <p class="muted">Share this text with the other person.</p>
-      </div>
-      <div class="card">
-        <div class="section-title"><i class="fas fa-sign-in-alt"></i> Remote description (paste from peer)</div>
-        <div class="inline" style="gap:10px;">
-          <button id="setRemoteBtn" class="btn"><i class="fas fa-check"></i> Set remote</button>
-          <button id="clearBtn" class="btn btn-outline"><i class="fas fa-broom"></i> Reset</button>
-        </div>
-        <textarea id="remoteSdp" placeholder="Paste the other person’s SDP here…"></textarea>
-        <p class="muted">After pasting, click “Set remote”.</p>
-      </div>
-    </div>
-
-    <!-- Connection status -->
+    <!-- Status -->
     <div class="card">
-      <div class="section-title"><i class="fas fa-link"></i> Connection</div>
+      <div class="section-title"><i class="fas fa-wave-square"></i> Status</div>
       <div class="inline">
         <span id="connState" class="pill">Disconnected</span>
         <span id="iceState" class="pill">ICE: New</span>
@@ -88,12 +78,12 @@
       </div>
     </div>
 
-    <!-- File send/receive -->
+    <!-- Send / Receive -->
     <div class="row">
       <div class="card">
         <div class="section-title"><i class="fas fa-upload"></i> Send file</div>
         <input type="file" id="fileInput"/>
-        <div id="sendArea" class="muted">Select a file after connection is established.</div>
+        <div id="sendArea" class="muted">Join a room and connect to enable sending.</div>
         <div id="sendProgressWrap" style="margin-top:10px; display:none;">
           <progress id="sendProgress" value="0" max="100"></progress>
           <div id="sendProgressText" class="muted">0%</div>
@@ -106,27 +96,47 @@
     </div>
 
     <footer>
-      <p>© FileShare Pro — Peer-to-peer demo. No cloud storage; data flows directly between browsers.</p>
-      <p class="muted">Tip: Use HTTPS (GitHub Pages already is) and share SDPs via chat to connect.</p>
+      <p>© FileShare Pro — P2P demo. Signaling via Firebase; file data sent directly between browsers.</p>
+      <p class="muted">Tip: Use the same Room ID, different roles, and keep the tab open during transfer.</p>
     </footer>
   </div>
 
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
   <script>
-    // Basic WebRTC P2P with manual signaling (copy/paste SDP)
+    // 1) Replace with your Firebase config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // 2) Init Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // WebRTC setup
     const iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
     let pc = null;
     let dataChannel = null;
-    let role = 'sender';
+    let role = 'caller';
+    let roomRef = null;
+    let roomId = '';
+    let localCandidateRef = null;
+    let remoteCandidateRef = null;
 
+    // UI refs
     const els = {
       roleRadios: document.querySelectorAll('input[name="role"]'),
-      createOfferBtn: document.getElementById('createOfferBtn'),
-      createAnswerBtn: document.getElementById('createAnswerBtn'),
-      copyLocalBtn: document.getElementById('copyLocalBtn'),
-      localSdp: document.getElementById('localSdp'),
-      remoteSdp: document.getElementById('remoteSdp'),
-      setRemoteBtn: document.getElementById('setRemoteBtn'),
-      clearBtn: document.getElementById('clearBtn'),
+      joinBtn: document.getElementById('joinBtn'),
+      leaveBtn: document.getElementById('leaveBtn'),
+      roomId: document.getElementById('roomId'),
       connState: document.getElementById('connState'),
       iceState: document.getElementById('iceState'),
       dcState: document.getElementById('dcState'),
@@ -138,97 +148,97 @@
       receivedList: document.getElementById('receivedList'),
     };
 
-    els.roleRadios.forEach(r => r.addEventListener('change', e => {
-      role = e.target.value;
-      if (pc) updateStatus('Connection reset for new role.');
-      resetAll();
-    }));
+    els.roleRadios.forEach(r => r.addEventListener('change', e => role = e.target.value));
 
-    function resetAll() {
-      if (dataChannel) dataChannel.close();
-      if (pc) pc.close();
+    els.joinBtn.addEventListener('click', async () => {
+      roomId = els.roomId.value.trim();
+      if (!roomId) return alert('Enter a Room ID.');
+      await joinRoom(roomId);
+    });
+
+    els.leaveBtn.addEventListener('click', async () => {
+      await leaveRoom();
+    });
+
+    async function joinRoom(id) {
+      // Create peer connection
       pc = new RTCPeerConnection({ iceServers });
-      dataChannel = null;
+      pc.onconnectionstatechange = () => els.connState.textContent = capitalize(pc.connectionState);
+      pc.oniceconnectionstatechange = () => els.iceState.textContent = 'ICE: ' + capitalize(pc.iceConnectionState);
 
-      pc.onconnectionstatechange = () => {
-        els.connState.textContent = pc.connectionState[0].toUpperCase() + pc.connectionState.slice(1);
-      };
-      pc.oniceconnectionstatechange = () => {
-        els.iceState.textContent = 'ICE: ' + pc.iceConnectionState[0].toUpperCase() + pc.iceConnectionState.slice(1);
-      };
-      pc.onicegatheringstatechange = () => {
-        // When ICE gathering is complete, localDescription contains full SDP
-      };
-
-      if (role === 'sender') {
+      // Data channel
+      if (role === 'caller') {
         dataChannel = pc.createDataChannel('file');
         wireDataChannel(dataChannel);
       } else {
-        pc.ondatachannel = (evt) => {
-          dataChannel = evt.channel;
-          wireDataChannel(dataChannel);
-        };
+        pc.ondatachannel = (evt) => { dataChannel = evt.channel; wireDataChannel(dataChannel); };
       }
       updateDcStatus();
-      els.localSdp.value = '';
-      els.remoteSdp.value = '';
-    }
 
-    function updateDcStatus() {
-      els.dcState.textContent = 'DataChannel: ' + (dataChannel ? dataChannel.readyState : 'closed');
-    }
+      // Firebase room references
+      roomRef = db.ref('rooms/' + id);
+      localCandidateRef = roomRef.child(role + 'Candidates');
+      remoteCandidateRef = roomRef.child((role === 'caller') ? 'calleeCandidates' : 'callerCandidates');
 
-    function updateStatus(msg) {
-      console.log('[Status]', msg);
-    }
+      // ICE candidates: publish to DB
+      pc.onicecandidate = (evt) => {
+        if (evt.candidate) {
+          localCandidateRef.push(evt.candidate.toJSON());
+        }
+      };
 
-    async function createOffer() {
-      if (role !== 'sender') return alert('Switch role to Sender to create an offer.');
-      const offer = await pc.createOffer({ offerToReceiveAudio: false, offerToReceiveVideo: false });
-      await pc.setLocalDescription(offer);
-      await waitForIceComplete(pc);
-      els.localSdp.value = JSON.stringify(pc.localDescription);
-    }
-
-    async function createAnswer() {
-      if (role !== 'receiver') return alert('Switch role to Receiver to create an answer.');
-      const remote = getRemoteDescription();
-      if (!remote) return;
-      await pc.setRemoteDescription(remote);
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      await waitForIceComplete(pc);
-      els.localSdp.value = JSON.stringify(pc.localDescription);
-    }
-
-    async function setRemote() {
-      const desc = getRemoteDescription();
-      if (!desc) return;
-      await pc.setRemoteDescription(desc);
-      updateStatus('Remote description set.');
-    }
-
-    function getRemoteDescription() {
-      try {
-        const obj = JSON.parse(els.remoteSdp.value.trim());
-        return new RTCSessionDescription(obj);
-      } catch (e) {
-        alert('Invalid SDP JSON. Make sure you pasted the full text.');
-        return null;
-      }
-    }
-
-    function waitForIceComplete(pc) {
-      return new Promise(resolve => {
-        if (pc.iceGatheringState === 'complete') return resolve();
-        const check = () => {
-          if (pc.iceGatheringState === 'complete') {
-            pc.removeEventListener('icegatheringstatechange', check);
-            resolve();
-          }
-        };
-        pc.addEventListener('icegatheringstatechange', check);
+      // Subscribe to remote ICE candidates
+      remoteCandidateRef.on('child_added', snapshot => {
+        const candidate = snapshot.val();
+        pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(console.error);
       });
+
+      if (role === 'caller') {
+        // Caller creates offer and writes to DB
+        const offer = await pc.createOffer({ offerToReceiveAudio: false, offerToReceiveVideo: false });
+        await pc.setLocalDescription(offer);
+        await roomRef.child('offer').set(offer.toJSON());
+
+        // Wait for callee answer
+        roomRef.child('answer').on('value', async (snap) => {
+          const ans = snap.val();
+          if (ans && !pc.currentRemoteDescription) {
+            await pc.setRemoteDescription(new RTCSessionDescription(ans));
+          }
+        });
+      } else {
+        // Callee waits for offer
+        roomRef.child('offer').on('value', async (snap) => {
+          const off = snap.val();
+          if (off && !pc.currentRemoteDescription && !pc.currentLocalDescription) {
+            await pc.setRemoteDescription(new RTCSessionDescription(off));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await roomRef.child('answer').set(answer.toJSON());
+          }
+        });
+      }
+
+      els.sendArea.textContent = 'Connecting… open this page on the other device with the same Room ID.';
+    }
+
+    async function leaveRoom() {
+      try {
+        if (roomRef) {
+          await roomRef.remove();
+        }
+      } catch (e) { console.warn('Room cleanup warning:', e); }
+      if (dataChannel) try { dataChannel.close(); } catch {}
+      if (pc) try { pc.close(); } catch {}
+      pc = null; dataChannel = null; roomRef = null;
+      updateDcStatus();
+      els.connState.textContent = 'Disconnected';
+      els.iceState.textContent = 'ICE: New';
+      els.sendArea.textContent = 'Left room.';
+      els.sendProgressWrap.style.display = 'none';
+      els.sendProgress.value = 0;
+      els.sendProgressText.textContent = '0%';
+      els.receivedList.innerHTML = '';
     }
 
     function wireDataChannel(dc) {
@@ -245,7 +255,6 @@
       dc.onmessage = (evt) => {
         const data = evt.data;
         if (typeof data === 'string') {
-          // Control messages: metadata or done
           const msg = JSON.parse(data);
           if (msg.type === 'file-meta') {
             incomingMeta = msg;
@@ -255,34 +264,35 @@
             const blob = new Blob(incomingBuffer, { type: incomingMeta.mime });
             const url = URL.createObjectURL(blob);
             const li = document.createElement('li');
-            li.innerHTML = `<strong>${incomingMeta.name}</strong> (${formatBytes(incomingMeta.size)}) — <a href="${url}" download="${incomingMeta.name}">Download</a>`;
+            li.innerHTML = `<strong>${escapeHtml(incomingMeta.name)}</strong> (${formatBytes(incomingMeta.size)}) — <a href="${url}" download="${escapeHtml(incomingMeta.name)}">Download</a>`;
             els.receivedList.appendChild(li);
-            incomingMeta = null;
-            incomingBuffer = [];
-            incomingBytes = 0;
+            incomingMeta = null; incomingBuffer = []; incomingBytes = 0;
           }
         } else {
-          // Binary chunk
           incomingBuffer.push(new Uint8Array(data));
           incomingBytes += data.byteLength;
         }
       };
     }
 
+    function updateDcStatus() {
+      const state = dataChannel ? dataChannel.readyState : 'closed';
+      els.dcState.textContent = 'DataChannel: ' + capitalize(state);
+    }
+
+    function capitalize(s) { return s ? s[0].toUpperCase() + s.slice(1) : ''; }
+
     // Sending
     els.fileInput.addEventListener('change', async () => {
       if (!dataChannel || dataChannel.readyState !== 'open') {
-        alert('Not connected. Complete the offer/answer exchange first.');
+        alert('Not connected. Join a room with the other device first.');
         return;
       }
       const file = els.fileInput.files[0];
       if (!file) return;
 
-      const chunkSize = 64 * 1024; // 64KB
       const reader = file.stream().getReader();
-
-      // Send metadata
-      dataChannel.send(JSON.stringify({ type: 'file-meta', name: file.name, size: file.size, mime: file.type || 'application/octet-stream' }));
+      dataChannel.send(JSON.stringify({ type:'file-meta', name:file.name, size:file.size, mime:file.type || 'application/octet-stream' }));
 
       let sent = 0;
       els.sendProgressWrap.style.display = 'block';
@@ -290,8 +300,7 @@
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        // Flow control: wait if bufferedAmount is too high
-        await waitForBufferLow(dataChannel);
+        await flowControl(dataChannel);
         dataChannel.send(value.buffer);
         sent += value.byteLength;
         const pct = Math.round((sent / file.size) * 100);
@@ -299,12 +308,11 @@
         els.sendProgressText.textContent = pct + '%';
       }
 
-      // Notify completion
-      dataChannel.send(JSON.stringify({ type: 'file-complete' }));
+      dataChannel.send(JSON.stringify({ type:'file-complete' }));
       els.sendProgressText.textContent = 'Done';
     });
 
-    function waitForBufferLow(dc) {
+    function flowControl(dc) {
       const maxBuffered = 8 * 1024 * 1024; // 8MB
       return new Promise(resolve => {
         if (dc.bufferedAmount < maxBuffered) return resolve();
@@ -314,16 +322,10 @@
             resolve();
           }
         };
-        try {
-          dc.bufferedAmountLowThreshold = 1 * 1024 * 1024; // 1MB
-        } catch {}
+        try { dc.bufferedAmountLowThreshold = 1 * 1024 * 1024; } catch {}
         dc.addEventListener('bufferedamountlow', check);
-        // Fallback timer in case event isn't supported
         const interval = setInterval(() => {
-          if (dc.bufferedAmount < maxBuffered) {
-            clearInterval(interval);
-            resolve();
-          }
+          if (dc.bufferedAmount < maxBuffered) { clearInterval(interval); resolve(); }
         }, 100);
       });
     }
@@ -334,31 +336,7 @@
       while (v >= 1024 && i < u.length-1) { v /= 1024; i++; }
       return `${v.toFixed(1)} ${u[i]}`;
     }
-
-    // Wire buttons
-    els.createOfferBtn.addEventListener('click', createOffer);
-    els.createAnswerBtn.addEventListener('click', createAnswer);
-    els.setRemoteBtn.addEventListener('click', setRemote);
-    els.copyLocalBtn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(els.localSdp.value);
-      } catch {}
-    });
-    els.clearBtn.addEventListener('click', () => {
-      resetAll();
-      els.connState.textContent = 'Disconnected';
-      els.iceState.textContent = 'ICE: New';
-      els.dcState.textContent = 'DataChannel: Closed';
-      els.sendArea.textContent = 'Select a role and connect.';
-      els.sendProgressWrap.style.display = 'none';
-      els.sendProgress.value = 0;
-      els.sendProgressText.textContent = '0%';
-      els.receivedList.innerHTML = '';
-    });
-
-    // Initialize
-    resetAll();
+    function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   </script>
 </body>
 </html>
-
