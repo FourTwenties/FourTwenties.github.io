@@ -3,103 +3,44 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>FileShare Pro — P2P Presence & Sharing</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <title>FileShare Pro — Connectivity Test (Minimal)</title>
   <style>
-    :root {
-      --primary:#4a6cfa; --primary-dark:#2d4bcc; --secondary:#ff6b6b;
-      --success:#20c997; --warning:#ff922b; --dark:#1a1d28; --darker:#131620;
-      --light:#f8f9fa; --gray:#6c757d; --card-bg:rgba(255,255,255,0.06);
-      --card-border:rgba(255,255,255,0.12);
-    }
-    * { box-sizing:border-box; }
-    body { margin:0; background:linear-gradient(135deg,var(--darker),var(--dark)); color:var(--light); font-family:'Segoe UI',system-ui,sans-serif; line-height:1.6; padding:20px; }
-    .container { max-width:1100px; margin:0 auto; }
-    header { display:flex; justify-content:space-between; align-items:center; padding:10px 0 20px; }
-    .logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.6rem; }
-    .pill { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.1); padding:6px 10px; border-radius:999px; font-size:.95rem; }
-    .card { background:var(--card-bg); border:1px solid var(--card-border); border-radius:16px; padding:18px; backdrop-filter:blur(8px); margin-bottom:18px; }
-    .section-title { display:flex; align-items:center; gap:10px; font-size:1.2rem; margin:6px 0 12px; }
-    .row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-    input[type="text"] {
-      width:100%; background:rgba(255,255,255,0.08); color:var(--light);
-      border:1px solid var(--card-border); border-radius:10px; padding:10px; font-family:inherit;
-    }
-    .inline { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .btn { background:var(--primary); color:#fff; border:none; border-radius:10px; padding:10px 14px; font-weight:600; cursor:pointer; transition:.2s; display:inline-flex; align-items:center; gap:8px; }
-    .btn:hover { background:var(--primary-dark); transform:translateY(-1px); }
-    .btn-outline { background:transparent; color:var(--primary); border:2px solid var(--primary); }
-    .list { list-style:none; padding:0; margin:0; }
-    .list li { background:rgba(255,255,255,0.08); border:1px solid var(--card-border); border-radius:12px; padding:10px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
-    .muted { color:var(--gray); font-size:.95rem; }
-    progress { width:100%; height:10px; border-radius:10px; overflow:hidden; }
-    progress::-webkit-progress-bar { background:rgba(255,255,255,0.1); border-radius:10px; }
-    progress::-webkit-progress-value { background:var(--primary); border-radius:10px; }
-    footer { text-align:center; color:var(--gray); margin-top:24px; }
+    body { margin:0; font-family:system-ui, Arial; background:#0f1220; color:#eef1f7; padding:20px; }
+    .card { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:16px; margin-bottom:16px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    input, button { padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.08); color:#eef1f7; }
+    button { cursor:pointer; border: none; background:#4a6cfa; }
+    button.secondary { background:transparent; border:1px solid #4a6cfa; color:#4a6cfa; }
+    .pill { display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(255,255,255,0.1); margin-right:8px; }
+    ul { list-style:none; padding:0; margin:0; }
+    li { display:flex; justify-content:space-between; align-items:center; padding:8px; border-radius:10px; background:rgba(255,255,255,0.08); margin-bottom:8px; }
+    #log { white-space:pre-wrap; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:rgba(0,0,0,0.35); padding:12px; border-radius:10px; min-height:120px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="logo"><i class="fas fa-share-alt"></i> FileShare Pro</div>
-      <div class="pill"><i class="fas fa-plug"></i> Auto-discovery via Firebase • P2P via WebRTC</div>
-    </header>
-
-    <!-- Identity -->
-    <div class="card">
-      <div class="section-title"><i class="fas fa-id-badge"></i> Your identity</div>
-      <div class="row">
-        <div>
-          <label class="muted">Display name</label>
-          <input type="text" id="displayName" placeholder="e.g. Mystery's Phone"/>
-        </div>
-        <div class="inline" style="align-items:flex-end;">
-          <button id="goOnlineBtn" class="btn"><i class="fas fa-wifi"></i> Go online</button>
-          <button id="goOfflineBtn" class="btn btn-outline"><i class="fas fa-power-off"></i> Go offline</button>
-        </div>
-      </div>
-      <p class="muted">Going online makes your device visible to others on this page. Keep the tab open to stay discoverable.</p>
-    </div>
-
-    <!-- Presence -->
-    <div class="card">
-      <div class="section-title"><i class="fas fa-users"></i> Available devices</div>
-      <ul id="peerList" class="list"></ul>
-      <p class="muted">Devices appear automatically when they join. Click Connect on a device to start a direct transfer.</p>
-    </div>
-
-    <!-- Status -->
-    <div class="card">
-      <div class="section-title"><i class="fas fa-wave-square"></i> Connection</div>
-      <div class="inline">
-        <span id="connState" class="pill">Disconnected</span>
-        <span id="iceState" class="pill">ICE: New</span>
-        <span id="dcState" class="pill">DataChannel: Closed</span>
-      </div>
-      <p id="statusMsg" class="muted"></p>
-    </div>
-
-    <!-- Send / Receive -->
+  <h2>FileShare Pro — Connectivity Test</h2>
+  <div class="card">
     <div class="row">
-      <div class="card">
-        <div class="section-title"><i class="fas fa-upload"></i> Send file</div>
-        <input type="file" id="fileInput"/>
-        <div id="sendArea" class="muted">Connect to a device, then choose a file to send.</div>
-        <div id="sendProgressWrap" style="margin-top:10px; display:none;">
-          <progress id="sendProgress" value="0" max="100"></progress>
-          <div id="sendProgressText" class="muted">0%</div>
-        </div>
+      <div>
+        <label>Display name</label>
+        <input id="displayName" placeholder="Mystery's Device"/>
       </div>
-      <div class="card">
-        <div class="section-title"><i class="fas fa-download"></i> Received files</div>
-        <ul id="receivedList" class="list"></ul>
+      <div style="display:flex; gap:8px; align-items:flex-end;">
+        <button id="goOnline">Go online</button>
+        <button id="goOffline" class="secondary">Go offline</button>
       </div>
     </div>
+    <p><span class="pill" id="connState">Connection: Disconnected</span><span class="pill" id="iceState">ICE: New</span><span class="pill" id="dcState">DataChannel: Closed</span></p>
+  </div>
 
-    <footer>
-      <p>© FileShare Pro — Devices discovered via Firebase presence; files sent directly P2P via WebRTC.</p>
-      <p class="muted">If connection fails on strict networks, TURN will relay traffic for reliability.</p>
-    </footer>
+  <div class="card">
+    <h3>Available devices</h3>
+    <ul id="peers"></ul>
+  </div>
+
+  <div class="card">
+    <h3>Logs</h3>
+    <div id="log"></div>
   </div>
 
   <!-- Firebase SDKs -->
@@ -107,7 +48,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
   <script>
-    // Firebase config (use your asia-southeast1 databaseURL)
+    // Firebase config — using your regioned Realtime Database
     const firebaseConfig = {
       apiKey: "AIzaSyDh3WZ0lw2m81Oo-_VKJ_Q5786HW67g3O4",
       authDomain: "filesharepro-b7281.firebaseapp.com",
@@ -121,7 +62,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ICE: STUN + TURN for reliability
+    // ICE servers (STUN + TURN for reliability)
     const iceServers = [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
@@ -129,353 +70,184 @@
       { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
     ];
 
+    // UI
+    const els = {
+      name: document.getElementById('displayName'),
+      online: document.getElementById('goOnline'),
+      offline: document.getElementById('goOffline'),
+      peers: document.getElementById('peers'),
+      conn: document.getElementById('connState'),
+      ice: document.getElementById('iceState'),
+      dc: document.getElementById('dcState'),
+      log: document.getElementById('log'),
+    };
+
     // State
-    const selfId = cryptoRandomId();
+    const selfId = randId();
     let selfName = '';
     let presenceRef = null;
     const peersRef = db.ref('presence');
     let pc = null;
-    let dataChannel = null;
-    let currentPeerId = null;
+    let dc = null;
     let roomRef = null;
     let callerCandidatesRef = null;
     let calleeCandidatesRef = null;
 
-    // UI
-    const els = {
-      displayName: document.getElementById('displayName'),
-      goOnlineBtn: document.getElementById('goOnlineBtn'),
-      goOfflineBtn: document.getElementById('goOfflineBtn'),
-      peerList: document.getElementById('peerList'),
-      connState: document.getElementById('connState'),
-      iceState: document.getElementById('iceState'),
-      dcState: document.getElementById('dcState'),
-      statusMsg: document.getElementById('statusMsg'),
-      fileInput: document.getElementById('fileInput'),
-      sendArea: document.getElementById('sendArea'),
-      sendProgressWrap: document.getElementById('sendProgressWrap'),
-      sendProgress: document.getElementById('sendProgress'),
-      sendProgressText: document.getElementById('sendProgressText'),
-      receivedList: document.getElementById('receivedList')
-    };
+    function log(...a){ console.log(...a); els.log.textContent += a.map(x => (typeof x === 'string' ? x : JSON.stringify(x))).join(' ') + '\n'; }
+    function setConnState(s){ els.conn.textContent = 'Connection: ' + cap(s); }
+    function setIceState(s){ els.ice.textContent = 'ICE: ' + cap(s); }
+    function setDcState(s){ els.dc.textContent = 'DataChannel: ' + cap(s); }
+    function cap(s){ return s ? s[0].toUpperCase() + s.slice(1) : ''; }
 
-    // Presence: go online/offline
-    els.goOnlineBtn.addEventListener('click', async () => {
-      selfName = (els.displayName.value.trim() || 'Anonymous');
+    // Online / Offline
+    els.online.addEventListener('click', async () => {
+      selfName = (els.name.value.trim() || 'Anonymous');
       presenceRef = db.ref('presence/' + selfId);
-      await presenceRef.set({ id: selfId, name: selfName, ts: Date.now() });
+      await presenceRef.set({ id:selfId, name:selfName, ts: Date.now() });
       presenceRef.onDisconnect().remove();
       subscribePresence();
-      setStatus('Online as ' + selfName);
+      log('Online as', selfName, 'id=', selfId);
     });
 
-    els.goOfflineBtn.addEventListener('click', async () => {
+    els.offline.addEventListener('click', async () => {
       await goOffline();
-      setStatus('Went offline.');
     });
 
     async function goOffline() {
-      if (presenceRef) { try { await presenceRef.remove(); } catch(e){} }
+      try { if (presenceRef) await presenceRef.remove(); } catch(e){}
       await cleanupRoom();
       cleanupConnection();
-      els.peerList.innerHTML = '';
+      els.peers.innerHTML = '';
+      log('Went offline');
     }
 
+    // Presence list
     function subscribePresence() {
-      els.peerList.innerHTML = '';
+      els.peers.innerHTML = '';
       peersRef.off();
       peersRef.on('child_added', snap => renderPeer(snap.val()));
       peersRef.on('child_changed', snap => renderPeer(snap.val()));
       peersRef.on('child_removed', snap => {
-        const li = document.querySelector('[data-peer-id="'+ snap.key +'"]');
-        if (li) li.remove();
+        const el = document.querySelector('[data-peer-id="'+ snap.key +'"]');
+        if (el) el.remove();
       });
     }
 
-    function renderPeer(peer) {
+    function renderPeer(peer){
       if (!peer || peer.id === selfId) return;
       let li = document.querySelector('[data-peer-id="'+ peer.id +'"]');
-      if (!li) {
+      if (!li){
         li = document.createElement('li');
         li.dataset.peerId = peer.id;
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = peer.name || 'Unknown';
-        const btns = document.createElement('div');
-        const connectBtn = document.createElement('button');
-        connectBtn.className = 'btn';
-        connectBtn.innerHTML = '<i class="fas fa-link"></i> Connect';
-        connectBtn.addEventListener('click', () => connectToPeer(peer.id));
-        btns.appendChild(connectBtn);
-        li.appendChild(nameSpan);
-        li.appendChild(btns);
-        els.peerList.appendChild(li);
+        li.innerHTML = `<span>${peer.name || 'Unknown'}</span>`;
+        const btn = document.createElement('button');
+        btn.textContent = 'Connect';
+        btn.addEventListener('click', () => connect(peer.id));
+        li.appendChild(btn);
+        els.peers.appendChild(li);
       } else {
         li.querySelector('span').textContent = peer.name || 'Unknown';
       }
     }
 
-    // Deterministic room ID for a pair of peers
-    function roomIdFor(a, b) { return [a, b].sort().join('_'); }
+    // Connection
+    function roomId(a,b){ return [a,b].sort().join('_'); }
 
-    async function connectToPeer(peerId) {
-      currentPeerId = peerId;
-      const roomId = roomIdFor(selfId, peerId);
-      roomRef = db.ref('rooms/' + roomId);
-
-      // Clean previous
+    async function connect(peerId){
+      const rid = roomId(selfId, peerId);
+      roomRef = db.ref('rooms/' + rid);
       cleanupConnection();
 
       pc = new RTCPeerConnection({ iceServers });
-      pc.onconnectionstatechange = () => els.connState.textContent = capitalize(pc.connectionState);
-      pc.oniceconnectionstatechange = () => els.iceState.textContent = 'ICE: ' + capitalize(pc.iceConnectionState);
-      pc.onicegatheringstatechange = () => setStatus('ICE gathering: ' + pc.iceGatheringState);
+      pc.onconnectionstatechange = () => setConnState(pc.connectionState);
+      pc.oniceconnectionstatechange = () => setIceState(pc.iceConnectionState);
 
-      // Roles: lexicographically smaller id is caller
       const isCaller = (selfId < peerId);
 
-      // DataChannel
-      if (isCaller) {
-        dataChannel = pc.createDataChannel('file');
-        wireDataChannel(dataChannel);
+      if (isCaller){
+        dc = pc.createDataChannel('test');
+        wireDc(dc);
       } else {
-        pc.ondatachannel = evt => { dataChannel = evt.channel; wireDataChannel(dataChannel); };
+        pc.ondatachannel = e => { dc = e.channel; wireDc(dc); };
       }
-      updateDcStatus();
+      setDcState(dc ? dc.readyState : 'closed');
 
-      // ICE candidates paths
       callerCandidatesRef = roomRef.child('callerCandidates');
       calleeCandidatesRef = roomRef.child('calleeCandidates');
 
-      pc.onicecandidate = evt => {
-        if (!evt.candidate) return;
-        const target = isCaller ? callerCandidatesRef : calleeCandidatesRef;
-        target.push(evt.candidate.toJSON());
+      pc.onicecandidate = e => {
+        if (!e.candidate) return;
+        const tgt = isCaller ? callerCandidatesRef : calleeCandidatesRef;
+        tgt.push(e.candidate.toJSON());
       };
 
-      // Subscribe to remote ICE
       const remoteRef = isCaller ? calleeCandidatesRef : callerCandidatesRef;
       remoteRef.off();
       remoteRef.on('child_added', snap => {
         const cand = snap.val();
-        pc.addIceCandidate(new RTCIceCandidate(cand)).catch(err => setStatus('ICE error: ' + err.message));
+        pc.addIceCandidate(new RTCIceCandidate(cand)).catch(err => log('ICE add error:', err.message));
       });
 
-      // Offer/answer exchange
-      if (isCaller) {
+      if (isCaller){
         const offer = await pc.createOffer({ offerToReceiveAudio:false, offerToReceiveVideo:false });
         await pc.setLocalDescription(offer);
         await roomRef.child('offer').set(offer.toJSON());
-        setStatus('Offer created. Awaiting answer…');
+        log('Offer set. Waiting for answer…');
 
         roomRef.child('answer').off();
-        roomRef.child('answer').on('value', async snap => {
-          const ans = snap.val();
-          if (ans && !pc.currentRemoteDescription) {
+        roomRef.child('answer').on('value', async s => {
+          const ans = s.val();
+          if (ans && !pc.currentRemoteDescription){
             await pc.setRemoteDescription(new RTCSessionDescription(ans));
-            setStatus('Connected. Choose a file to send.');
+            log('Answer applied. Waiting for DataChannel open…');
           }
         });
       } else {
         roomRef.child('offer').off();
-        roomRef.child('offer').on('value', async snap => {
-          const off = snap.val();
+        roomRef.child('offer').on('value', async s => {
+          const off = s.val();
           if (!off || pc.currentRemoteDescription || pc.currentLocalDescription) return;
           await pc.setRemoteDescription(new RTCSessionDescription(off));
-          const answer = await pc.createAnswer();
-          await pc.setLocalDescription(answer);
-          await roomRef.child('answer').set(answer.toJSON());
-          setStatus('Connected. Choose a file to send.');
+          const ans = await pc.createAnswer();
+          await pc.setLocalDescription(ans);
+          await roomRef.child('answer').set(ans.toJSON());
+          log('Answer created. Waiting for ICE connectivity & DataChannel…');
         });
       }
     }
 
-    function wireDataChannel(dc) {
-      dc.binaryType = 'arraybuffer';
-      dc.onopen = () => { updateDcStatus(); setStatus('DataChannel open. Ready to transfer.'); };
-      dc.onclose = () => { updateDcStatus(); setStatus('DataChannel closed.'); };
-      dc.onerror = e => setStatus('DataChannel error: ' + e.message);
-
-      // Receiving with integrity check (SHA-256)
-      let incomingMeta = null;
-      let incomingChunks = [];
-      let incomingBytes = 0;
-      let hash = null;
-
-      dc.onmessage = async evt => {
-        const data = evt.data;
-        if (typeof data === 'string') {
-          const msg = JSON.parse(data);
-          if (msg.type === 'file-meta') {
-            incomingMeta = msg;
-            incomingChunks = [];
-            incomingBytes = 0;
-            hash = await crypto.subtle.digest('SHA-256', new Uint8Array([])); // initialize
-          } else if (msg.type === 'file-complete') {
-            const blob = new Blob(incomingChunks, { type: incomingMeta.mime });
-            const url = URL.createObjectURL(blob);
-
-            // Verify hash if provided
-            let verified = 'Unknown';
-            if (incomingMeta.sha256) {
-              const computed = await sha256HexFromChunks(incomingChunks);
-              verified = (computed === incomingMeta.sha256) ? 'Verified' : 'Mismatch';
-            }
-
-            const li = document.createElement('li');
-            li.innerHTML = `<span><strong>${escapeHtml(incomingMeta.name)}</strong> (${formatBytes(incomingMeta.size)}) — Integrity: ${verified}</span>
-                            <a class="btn btn-outline" href="${url}" download="${escapeHtml(incomingMeta.name)}"><i class="fas fa-download"></i> Download</a>`;
-            els.receivedList.appendChild(li);
-
-            incomingMeta = null;
-            incomingChunks = [];
-            incomingBytes = 0;
-            hash = null;
-          }
-        } else {
-          const chunk = new Uint8Array(data);
-          incomingChunks.push(chunk);
-          incomingBytes += chunk.byteLength;
-        }
-      };
+    function wireDc(dc){
+      dc.onopen = () => { setDcState('open'); log('DataChannel open. Sending test message…'); dc.send(JSON.stringify({ hello:'from ' + selfName })); };
+      dc.onclose = () => { setDcState('closed'); log('DataChannel closed'); };
+      dc.onerror = e => { log('DataChannel error:', e.message); };
+      dc.onmessage = e => { log('Received:', e.data); };
     }
 
-    // Send file with chunking + SHA-256
-    els.fileInput.addEventListener('change', async () => {
-      if (!dataChannel || dataChannel.readyState !== 'open') {
-        alert('Not connected. Click Connect on a device first.');
-        return;
-      }
-      const file = els.fileInput.files[0];
-      if (!file) return;
-
-      // Precompute SHA-256 (stream)
-      const shaHex = await sha256HexStream(file);
-
-      // Announce metadata
-      dataChannel.send(JSON.stringify({
-        type:'file-meta',
-        name:file.name,
-        size:file.size,
-        mime:file.type || 'application/octet-stream',
-        sha256: shaHex
-      }));
-
-      const reader = file.stream().getReader();
-      let sent = 0;
-      els.sendProgressWrap.style.display = 'block';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        await flowControl(dataChannel);
-        dataChannel.send(value.buffer);
-        sent += value.byteLength;
-        const pct = Math.round((sent / file.size) * 100);
-        els.sendProgress.value = pct;
-        els.sendProgressText.textContent = pct + '%';
-      }
-
-      dataChannel.send(JSON.stringify({ type:'file-complete' }));
-      els.sendProgressText.textContent = 'Done';
-      setStatus('Transfer complete.');
-    });
-
-    // Backpressure control
-    function flowControl(dc) {
-      const MAX = 8 * 1024 * 1024; // 8MB buffered
-      return new Promise(resolve => {
-        if (dc.bufferedAmount < MAX) return resolve();
-        const check = () => {
-          if (dc.bufferedAmount < MAX) {
-            dc.removeEventListener('bufferedamountlow', check);
-            resolve();
-          }
-        };
-        try { dc.bufferedAmountLowThreshold = 1 * 1024 * 1024; } catch {}
-        dc.addEventListener('bufferedamountlow', check);
-        const interval = setInterval(() => {
-          if (dc.bufferedAmount < MAX) { clearInterval(interval); resolve(); }
-        }, 100);
-      });
+    async function cleanupRoom(){
+      if (!roomRef) return;
+      try {
+        await roomRef.child('offer').remove();
+        await roomRef.child('answer').remove();
+        await roomRef.child('callerCandidates').remove();
+        await roomRef.child('calleeCandidates').remove();
+      } catch(e){}
+      roomRef = null;
     }
 
-    async function cleanupRoom() {
-      if (roomRef) {
-        try {
-          await roomRef.child('offer').remove();
-          await roomRef.child('answer').remove();
-          await roomRef.child('callerCandidates').remove();
-          await roomRef.child('calleeCandidates').remove();
-        } catch(e){}
-        roomRef = null;
-      }
+    function cleanupConnection(){
+      try { if (dc) dc.close(); } catch(e){}
+      try { if (pc) pc.close(); } catch(e){}
+      dc = null; pc = null;
+      setConnState('disconnected');
+      setIceState('new');
+      setDcState('closed');
     }
 
-    function cleanupConnection() {
-      if (dataChannel) { try { dataChannel.close(); } catch(e){} }
-      if (pc) { try { pc.close(); } catch(e){} }
-      pc = null; dataChannel = null;
-      updateDcStatus();
-      els.connState.textContent = 'Disconnected';
-      els.iceState.textContent = 'ICE: New';
-      els.sendArea.textContent = 'Connect to a device, then choose a file to send.';
-      els.sendProgressWrap.style.display = 'none';
-      els.sendProgress.value = 0;
-      els.sendProgressText.textContent = '0%';
-      // Keep received list; it’s user content
-    }
-
-    function updateDcStatus() {
-      const state = dataChannel ? dataChannel.readyState : 'closed';
-      els.dcState.textContent = 'DataChannel: ' + capitalize(state);
-    }
-    function capitalize(s) { return s ? s[0].toUpperCase() + s.slice(1) : ''; }
-    function formatBytes(n) {
-      const u = ['B','KB','MB','GB','TB']; let i=0; let v=n;
-      while (v>=1024 && i<u.length-1) { v/=1024; i++;
-      }
-      return `${v.toFixed(1)} ${u[i]}`;
-    }
-    function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-    function cryptoRandomId() {
+    function randId(){
       const a = new Uint8Array(16); crypto.getRandomValues(a);
       return Array.from(a, b => b.toString(16).padStart(2,'0')).join('');
-    }
-
-    // SHA-256 utilities
-    async function sha256HexStream(file) {
-      const reader = file.stream().getReader();
-      const chunks = [];
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-      }
-      const full = concatChunks(chunks);
-      const digest = await crypto.subtle.digest('SHA-256', full);
-      return hexFromBuffer(digest);
-    }
-    async function sha256HexFromChunks(chunks) {
-      const full = concatChunks(chunks);
-      const digest = await crypto.subtle.digest('SHA-256', full);
-      return hexFromBuffer(digest);
-    }
-    function concatChunks(chunks) {
-      const total = chunks.reduce((sum, c) => sum + c.byteLength, 0);
-      const out = new Uint8Array(total);
-      let offset = 0;
-      for (const c of chunks) { out.set(new Uint8Array(c), offset); offset += c.byteLength; }
-      return out;
-    }
-    function hexFromBuffer(buf) {
-      const arr = new Uint8Array(buf);
-      return Array.from(arr, b => b.toString(16).padStart(2,'0')).join('');
-    }
-
-    function setStatus(msg) {
-      els.statusMsg.textContent = msg;
-      console.log('[Status]', msg);
     }
   </script>
 </body>
 </html>
+
