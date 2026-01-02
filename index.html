@@ -1,184 +1,105 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>FileShare Pro — Next</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <title>FileShare Pro</title>
   <style>
-    :root {
-      --bg: #0f1220; --bg-2:#0b0d14; --text:#eaf0ff; --muted:#a5afc7;
-      --card: rgba(255,255,255,0.06); --border: rgba(255,255,255,0.16);
-      --accent:#4a6cfa; --accent-2:#2d4bcc; --danger:#ff6b6b; --success:#20c997; --warning:#ffb100;
-      --glass: rgba(255,255,255,0.07); --radius:14px; --pad:16px; --shadow:0 10px 24px rgba(0,0,0,0.5);
-    }
-    [data-theme="light"] {
-      --bg: #f6f7fb; --bg-2:#ffffff; --text:#12131a; --muted:#5a6472;
-      --card: rgba(255,255,255,0.86); --border: rgba(0,0,0,0.08);
-      --glass: rgba(255,255,255,0.95);
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:linear-gradient(180deg,var(--bg),var(--bg-2));color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial;}
-    .wrap{max-width:1200px;margin:0 auto;padding:20px}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-    .brand{display:flex;align-items:center;gap:12px;font-weight:800}
-    .brand-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:var(--shadow)}
-    .brand-name{font-size:1.25rem}
-    .controls{display:flex;gap:10px;align-items:center}
-    .btn{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-weight:600}
-    .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;color:#fff}
-    .btn.danger{border-color:rgba(255,0,0,0.25);color:#fff;background:linear-gradient(135deg,#ff7b7b,#ff3b3b)}
-    .grid{display:grid;grid-template-columns:1.2fr 0.8fr;gap:14px}
-    @media(max-width:980px){.grid{grid-template-columns:1fr}}
-    .card{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius);padding:var(--pad);box-shadow:var(--shadow)}
-    .section-title{display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:8px}
-    label{display:block;font-size:.9rem;color:var(--muted);margin:6px 0}
-    input, select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:inherit}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.08);color:var(--muted);font-size:.85rem}
-    .status-row{display:flex;gap:8px;flex-wrap:wrap}
-    .list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
-    .list li{display:flex;align-items:center;justify-content:space-between;padding:10px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,0.04)}
-    .muted{color:var(--muted)}
-    .progress{height:10px;background:rgba(255,255,255,0.08);border-radius:10px;overflow:hidden}
-    .progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
-    .two-col{display:flex;gap:10px}
-    .qr{display:grid;place-items:center;width:140px;height:140px;border-radius:12px;border:1px dashed var(--border);background:rgba(255,255,255,0.06)}
-    footer{text-align:center;margin-top:16px;color:var(--muted);font-size:.9rem}
+    body { font-family: sans-serif; background:#0f1220; color:#eaf0ff; margin:0; padding:20px; }
+    .card { background:rgba(255,255,255,0.06); padding:16px; border-radius:12px; margin-bottom:16px; }
+    .btn { padding:10px 14px; border:none; border-radius:8px; cursor:pointer; }
+    .btn.primary { background:#4a6cfa; color:#fff; }
+    .log { background:rgba(0,0,0,0.3); min-height:120px; padding:10px; border-radius:8px; font-family:monospace; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <div class="brand-icon" aria-hidden="true"></div>
-        <div class="brand-name">FileShare Pro</div>
-      </div>
-      <div class="controls">
-        <button id="themeToggle" class="btn">Toggle theme</button>
-        <button id="helpBtn" class="btn">Help</button>
-      </div>
-    </header>
+  <h1>FileShare Pro</h1>
 
-    <div class="grid">
-      <!-- Left column -->
-      <div class="left">
-        <div class="card">
-          <div class="section-title">Identity & presence</div>
-          <div class="two-col">
-            <div style="flex:1">
-              <label>Display name</label>
-              <input id="displayName" placeholder="Mystery's Device"/>
-              <div style="margin-top:10px;display:flex;gap:8px">
-                <button id="goOnlineBtn" class="btn primary">Go online</button>
-                <button id="goOfflineBtn" class="btn">Go offline</button>
-              </div>
-              <p id="statusMsg" class="muted" style="margin-top:8px">Status messages appear here.</p>
-            </div>
-            <div style="flex:1">
-              <div class="status-row">
-                <span id="connState" class="pill">Connection: Disconnected</span>
-                <span id="iceState" class="pill">ICE: New</span>
-                <span id="dcState" class="pill">DataChannel: Closed</span>
-                <span id="roomIdBadge" class="pill">Room: —</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <div class="section-title">Available devices</div>
-          <div style="display:flex;gap:8px;margin-bottom:8px">
-            <button id="refreshPeers" class="btn">Refresh</button>
-            <select id="turnToggle" style="width:200px">
-              <option value="auto">TURN: Auto (recommended)</option>
-              <option value="none">TURN: Off (STUN only)</option>
-            </select>
-            <select id="modeSelect" style="width:200px">
-              <option value="direct">Mode: Direct P2P</option>
-              <option value="group">Mode: Group sharing</option>
-              <option value="web">Mode: Web transfer</option>
-            </select>
-          </div>
-          <ul id="peerList" class="list"></ul>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <div class="section-title">Send files</div>
-          <div class="two-col">
-            <div style="flex:1">
-              <label>Choose file</label>
-              <input id="fileInput" type="file"/>
-              <div class="progress" id="sendProgressWrap" style="margin-top:10px"><i id="sendProgressBar"></i></div>
-              <div id="sendProgressText" class="muted">0%</div>
-              <div style="margin-top:8px;display:flex;gap:8px">
-                <button id="cancelSend" class="btn">Cancel</button>
-                <button id="resumeSend" class="btn">Resume</button>
-              </div>
-            </div>
-            <div style="flex:1">
-              <label>Incoming files</label>
-              <ul id="receivedList" class="list"></ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right column -->
-      <div class="right">
-        <div class="card">
-          <div class="section-title">Quick connect (QR / link)</div>
-          <div class="two-col">
-            <div class="qr" id="qrBox">QR appears here</div>
-            <div style="flex:1">
-              <label>Shareable link</label>
-              <input id="shareLink" readonly placeholder="https://..."/>
-              <div style="margin-top:8px;display:flex;gap:8px">
-                <button id="genQr" class="btn">Generate QR</button>
-                <button id="copyLink" class="btn">Copy link</button>
-                <button id="expireLink" class="btn danger">Expire link</button>
-              </div>
-              <p class="muted" id="linkStatus" style="margin-top:8px">Links expire automatically for safety.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <div class="section-title">Logs & diagnostics</div>
-          <div id="log" style="background:rgba(0,0,0,0.3);min-height:140px;border-radius:10px;padding:10px;font-family:ui-monospace,monospace"></div>
-          <div style="margin-top:8px;display:flex;gap:8px">
-            <button id="clearLog" class="btn">Clear</button>
-            <button id="showRoomBtn" class="btn">Show room in DB</button>
-            <button id="testPing" class="btn">Ping</button>
-            <button id="copyRoom" class="btn">Copy room id</button>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <div class="section-title">Tips</div>
-          <ul class="muted" style="margin:0;padding-left:18px">
-            <li>Use different networks (Wi‑Fi + mobile data) to validate TURN.</li>
-            <li>Keep tabs open; presence uses onDisconnect to clean up.</li>
-            <li>Web transfer links should be short‑lived and tokenized.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <footer>© FileShare Pro — Next. Beautiful, reliable, and fast.</footer>
+  <div class="card">
+    <label>Display name</label>
+    <input id="displayName" placeholder="Mystery's Device"/>
+    <button id="goOnlineBtn" class="btn primary">Go online</button>
+    <button id="goOfflineBtn" class="btn">Go offline</button>
+    <p id="statusMsg">Status: Ready</p>
   </div>
 
+  <div class="card">
+    <h3>Available peers</h3>
+    <ul id="peerList"></ul>
+  </div>
+
+  <div class="card">
+    <h3>Logs</h3>
+    <div id="log" class="log"></div>
+    <button id="clearLog" class="btn">Clear</button>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
   <script>
-    const root = document.documentElement;
-    document.getElementById('themeToggle').addEventListener('click', () => {
-      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', next);
-    });
-    // Hook your existing JS to these IDs:
-    // displayName, goOnlineBtn, goOfflineBtn, statusMsg, connState, iceState, dcState, roomIdBadge
-    // refreshPeers, turnToggle, modeSelect, peerList, fileInput, sendProgressWrap, sendProgressBar, sendProgressText
-    // cancelSend, resumeSend, receivedList, genQr, shareLink, copyLink, expireLink, qrBox, linkStatus
-    // log, clearLog, showRoomBtn, testPing, copyRoom
+    // --- Firebase config (replace with your own project values) ---
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // --- State ---
+    const selfId = Math.random().toString(36).slice(2,10);
+    let presenceRef = null;
+
+    // --- UI helpers ---
+    const logEl = document.getElementById('log');
+    function log(...args){
+      const s = args.join(' ');
+      console.log('[FS]', ...args);
+      logEl.textContent += s + "\n";
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    function setStatus(s){ document.getElementById('statusMsg').textContent = 'Status: ' + s; log(s); }
+
+    // --- Presence ---
+    document.getElementById('goOnlineBtn').onclick = async () => {
+      const name = document.getElementById('displayName').value || 'Anonymous';
+      presenceRef = db.ref('presence/' + selfId);
+      await presenceRef.set({ id:selfId, name, ts: Date.now() });
+      presenceRef.onDisconnect().remove();
+      setStatus('Online as ' + name);
+      subscribePresence();
+    };
+
+    document.getElementById('goOfflineBtn').onclick = async () => {
+      if(presenceRef) await presenceRef.remove();
+      setStatus('Offline');
+      document.getElementById('peerList').innerHTML = '';
+    };
+
+    function subscribePresence(){
+      const peerList = document.getElementById('peerList');
+      peerList.innerHTML = '';
+      db.ref('presence').on('child_added', snap => {
+        const peer = snap.val();
+        if(!peer || peer.id === selfId) return;
+        const li = document.createElement('li');
+        li.textContent = peer.name + ' (' + peer.id + ')';
+        peerList.appendChild(li);
+      });
+      db.ref('presence').on('child_removed', snap => {
+        const el = Array.from(peerList.children).find(li => li.textContent.includes(snap.key));
+        if(el) el.remove();
+      });
+    }
+
+    document.getElementById('clearLog').onclick = () => { logEl.textContent = ''; };
   </script>
 </body>
 </html>
+
