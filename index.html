@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>FileShare Pro</title>
   <style>
-    body { font-family: sans-serif; background:#0f1220; color:#eaf0ff; margin:0; padding:20px; }
+    body { font-family: Inter, sans-serif; background:#0f1220; color:#eaf0ff; margin:0; padding:20px; }
     .card { background:rgba(255,255,255,0.06); padding:16px; border-radius:12px; margin-bottom:16px; }
     .btn { padding:10px 14px; border:none; border-radius:8px; cursor:pointer; }
     .btn.primary { background:#4a6cfa; color:#fff; }
     .log { background:rgba(0,0,0,0.3); min-height:120px; padding:10px; border-radius:8px; font-family:monospace; }
+    .progress { height:10px; background:rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; }
+    .progress > i { display:block; height:100%; width:0%; background:linear-gradient(90deg,#4a6cfa,#2d4bcc); }
   </style>
 </head>
 <body>
@@ -26,6 +28,18 @@
   <div class="card">
     <h3>Available peers</h3>
     <ul id="peerList"></ul>
+  </div>
+
+  <div class="card">
+    <h3>Send file</h3>
+    <input id="fileInput" type="file"/>
+    <div class="progress"><i id="sendProgressBar"></i></div>
+    <p id="sendProgressText">0%</p>
+  </div>
+
+  <div class="card">
+    <h3>Received files</h3>
+    <ul id="receivedList"></ul>
   </div>
 
   <div class="card">
@@ -55,6 +69,8 @@
     // --- State ---
     const selfId = Math.random().toString(36).slice(2,10);
     let presenceRef = null;
+    let pc = null, dc = null;
+    let roomRef = null;
 
     // --- UI helpers ---
     const logEl = document.getElementById('log');
@@ -90,6 +106,11 @@
         if(!peer || peer.id === selfId) return;
         const li = document.createElement('li');
         li.textContent = peer.name + ' (' + peer.id + ')';
+        const btn = document.createElement('button');
+        btn.textContent = 'Connect';
+        btn.className = 'btn primary';
+        btn.onclick = () => connectToPeer(peer.id);
+        li.appendChild(btn);
         peerList.appendChild(li);
       });
       db.ref('presence').on('child_removed', snap => {
@@ -98,8 +119,74 @@
       });
     }
 
+    // --- WebRTC setup ---
+    async function connectToPeer(peerId){
+      roomRef = db.ref('rooms/' + peerId + '_' + selfId);
+      pc = new RTCPeerConnection();
+      dc = pc.createDataChannel('file');
+      dc.onopen = () => log('DataChannel open');
+      dc.onmessage = e => receiveFile(e.data);
+
+      pc.onicecandidate = e => {
+        if(e.candidate){
+          roomRef.child('callerCandidates').push(e.candidate.toJSON());
+        }
+      };
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await roomRef.child('offer').set(offer.toJSON());
+      log('Offer written');
+
+      roomRef.child('answer').on('value', async snap => {
+        const ans = snap.val();
+        if(ans && !pc.currentRemoteDescription){
+          await pc.setRemoteDescription(new RTCSessionDescription(ans));
+          log('Answer applied');
+        }
+      });
+
+      roomRef.child('calleeCandidates').on('child_added', snap => {
+        const cand = snap.val();
+        pc.addIceCandidate(new RTCIceCandidate(cand));
+      });
+    }
+
+    // --- File transfer ---
+    document.getElementById('fileInput').onchange = () => {
+      const file = document.getElementById('fileInput').files[0];
+      if(file && dc && dc.readyState === 'open'){
+        sendFile(file);
+      }
+    };
+
+    function sendFile(file){
+      const reader = new FileReader();
+      reader.onload = () => {
+        dc.send(reader.result);
+        document.getElementById('sendProgressBar').style.width = '100%';
+        document.getElementById('sendProgressText').textContent = '100%';
+        log('File sent: ' + file.name);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function receiveFile(data){
+      const blob = new Blob([data]);
+      const url = URL.createObjectURL(blob);
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'received.bin';
+      a.textContent = 'Download received file';
+      li.appendChild(a);
+      document.getElementById('receivedList').appendChild(li);
+      log('File received');
+    }
+
     document.getElementById('clearLog').onclick = () => { logEl.textContent = ''; };
   </script>
 </body>
 </html>
+
 
