@@ -1,562 +1,184 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FileShare Pro — Upgraded (Fixed)</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>FileShare Pro — Next</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#0f1220; --card:rgba(255,255,255,0.04); --accent:#4a6cfa; --accent-2:#2d4bcc;
-      --muted:#9aa3b2; --glass:rgba(255,255,255,0.03); --radius:12px; --pad:14px;
+    :root {
+      --bg: #0f1220; --bg-2:#0b0d14; --text:#eaf0ff; --muted:#a5afc7;
+      --card: rgba(255,255,255,0.06); --border: rgba(255,255,255,0.16);
+      --accent:#4a6cfa; --accent-2:#2d4bcc; --danger:#ff6b6b; --success:#20c997; --warning:#ffb100;
+      --glass: rgba(255,255,255,0.07); --radius:14px; --pad:16px; --shadow:0 10px 24px rgba(0,0,0,0.5);
+    }
+    [data-theme="light"] {
+      --bg: #f6f7fb; --bg-2:#ffffff; --text:#12131a; --muted:#5a6472;
+      --card: rgba(255,255,255,0.86); --border: rgba(0,0,0,0.08);
+      --glass: rgba(255,255,255,0.95);
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;background:linear-gradient(180deg,var(--bg),#0b0d14);color:#eaf0ff;font-family:Inter,Segoe UI,system-ui,Arial;padding:18px}
-    .wrap{max-width:1100px;margin:0 auto}
-    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-    .brand{display:flex;align-items:center;gap:12px;font-weight:700;font-size:1.25rem}
-    .pill{background:var(--glass);padding:8px 12px;border-radius:999px;color:var(--muted);font-size:.95rem}
-    .grid{display:grid;grid-template-columns:1fr 360px;gap:14px}
-    @media(max-width:900px){.grid{grid-template-columns:1fr}}
-    .card{background:var(--card);border-radius:var(--radius);padding:var(--pad);box-shadow:0 6px 18px rgba(0,0,0,0.45)}
-    label{display:block;color:var(--muted);font-size:.85rem;margin-bottom:6px}
-    input[type="text"], input[type="file"], button, select {width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
-    .row{display:flex;gap:10px;align-items:center}
-    .btn{background:var(--accent);border:none;color:white;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:600}
-    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--accent)}
-    .status-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .badge{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03);color:var(--muted);font-size:.85rem}
-    ul.list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
-    ul.list li{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;background:rgba(255,255,255,0.02)}
-    .muted{color:var(--muted);font-size:.9rem}
-    .log{background:rgba(0,0,0,0.25);padding:10px;border-radius:8px;min-height:120px;font-family:ui-monospace,monospace;font-size:.85rem;overflow:auto}
-    .progress{height:10px;background:rgba(255,255,255,0.04);border-radius:8px;overflow:hidden}
-    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%}
-    .small{font-size:.85rem;color:var(--muted)}
-    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:.85rem}
-    .flex-col{display:flex;flex-direction:column;gap:8px}
-    .controls{display:flex;gap:8px}
+    body{margin:0;background:linear-gradient(180deg,var(--bg),var(--bg-2));color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Arial;}
+    .wrap{max-width:1200px;margin:0 auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:800}
+    .brand-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:var(--shadow)}
+    .brand-name{font-size:1.25rem}
+    .controls{display:flex;gap:10px;align-items:center}
+    .btn{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-weight:600}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;color:#fff}
+    .btn.danger{border-color:rgba(255,0,0,0.25);color:#fff;background:linear-gradient(135deg,#ff7b7b,#ff3b3b)}
+    .grid{display:grid;grid-template-columns:1.2fr 0.8fr;gap:14px}
+    @media(max-width:980px){.grid{grid-template-columns:1fr}}
+    .card{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius);padding:var(--pad);box-shadow:var(--shadow)}
+    .section-title{display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:8px}
+    label{display:block;font-size:.9rem;color:var(--muted);margin:6px 0}
+    input, select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:inherit}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.08);color:var(--muted);font-size:.85rem}
+    .status-row{display:flex;gap:8px;flex-wrap:wrap}
+    .list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+    .list li{display:flex;align-items:center;justify-content:space-between;padding:10px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,0.04)}
+    .muted{color:var(--muted)}
+    .progress{height:10px;background:rgba(255,255,255,0.08);border-radius:10px;overflow:hidden}
+    .progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+    .two-col{display:flex;gap:10px}
+    .qr{display:grid;place-items:center;width:140px;height:140px;border-radius:12px;border:1px dashed var(--border);background:rgba(255,255,255,0.06)}
+    footer{text-align:center;margin-top:16px;color:var(--muted);font-size:.9rem}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <div class="brand"><i class="fas fa-share-alt"></i> FileShare Pro <span class="small muted">— upgraded</span></div>
-      <div class="pill"><i class="fas fa-plug"></i> Firebase presence • WebRTC P2P</div>
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true"></div>
+        <div class="brand-name">FileShare Pro</div>
+      </div>
+      <div class="controls">
+        <button id="themeToggle" class="btn">Toggle theme</button>
+        <button id="helpBtn" class="btn">Help</button>
+      </div>
     </header>
 
     <div class="grid">
-      <!-- Left: main -->
-      <div>
+      <!-- Left column -->
+      <div class="left">
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div class="small muted">Identity</div>
-              <div style="font-weight:700;margin-top:6px" id="meLabel">You (not online)</div>
+          <div class="section-title">Identity & presence</div>
+          <div class="two-col">
+            <div style="flex:1">
+              <label>Display name</label>
+              <input id="displayName" placeholder="Mystery's Device"/>
+              <div style="margin-top:10px;display:flex;gap:8px">
+                <button id="goOnlineBtn" class="btn primary">Go online</button>
+                <button id="goOfflineBtn" class="btn">Go offline</button>
+              </div>
+              <p id="statusMsg" class="muted" style="margin-top:8px">Status messages appear here.</p>
             </div>
-            <div style="width:320px">
-              <label for="displayName" class="small muted">Display name</label>
-              <div style="display:flex;gap:8px">
-                <input id="displayName" type="text" placeholder="e.g. Mystery's Phone" />
-                <button id="goOnlineBtn" class="btn">Go online</button>
-                <button id="goOfflineBtn" class="btn ghost">Go offline</button>
+            <div style="flex:1">
+              <div class="status-row">
+                <span id="connState" class="pill">Connection: Disconnected</span>
+                <span id="iceState" class="pill">ICE: New</span>
+                <span id="dcState" class="pill">DataChannel: Closed</span>
+                <span id="roomIdBadge" class="pill">Room: —</span>
               </div>
             </div>
           </div>
-          <div class="status-row" style="margin-top:12px">
-            <div class="badge" id="connState">Connection: Disconnected</div>
-            <div class="badge" id="iceState">ICE: New</div>
-            <div class="badge" id="dcState">DataChannel: Closed</div>
-            <div class="badge" id="roomIdBadge">Room: —</div>
-          </div>
-          <div style="margin-top:10px" class="small muted" id="statusMsg">Status messages appear here.</div>
         </div>
 
         <div class="card" style="margin-top:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div><strong>Available devices</strong><div class="small muted">Click Connect to start handshake</div></div>
-            <div class="controls">
-              <button id="refreshPeers" class="btn ghost">Refresh</button>
-              <select id="turnToggle" style="width:160px">
-                <option value="auto">TURN: Auto (recommended)</option>
-                <option value="none">TURN: Off (STUN only)</option>
-              </select>
+          <div class="section-title">Available devices</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button id="refreshPeers" class="btn">Refresh</button>
+            <select id="turnToggle" style="width:200px">
+              <option value="auto">TURN: Auto (recommended)</option>
+              <option value="none">TURN: Off (STUN only)</option>
+            </select>
+            <select id="modeSelect" style="width:200px">
+              <option value="direct">Mode: Direct P2P</option>
+              <option value="group">Mode: Group sharing</option>
+              <option value="web">Mode: Web transfer</option>
+            </select>
+          </div>
+          <ul id="peerList" class="list"></ul>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div class="section-title">Send files</div>
+          <div class="two-col">
+            <div style="flex:1">
+              <label>Choose file</label>
+              <input id="fileInput" type="file"/>
+              <div class="progress" id="sendProgressWrap" style="margin-top:10px"><i id="sendProgressBar"></i></div>
+              <div id="sendProgressText" class="muted">0%</div>
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button id="cancelSend" class="btn">Cancel</button>
+                <button id="resumeSend" class="btn">Resume</button>
+              </div>
+            </div>
+            <div style="flex:1">
+              <label>Incoming files</label>
+              <ul id="receivedList" class="list"></ul>
             </div>
           </div>
-          <ul id="peerList" class="list" style="margin-top:12px"></ul>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div><strong>Send file</strong><div class="small muted">Connect first, then choose a file</div></div>
-            <div class="small muted">Max chunk size ~64KB</div>
-          </div>
-          <div style="margin-top:10px" class="flex-col">
-            <input id="fileInput" type="file" />
-            <div class="progress" id="sendProgressWrap" style="display:none"><i id="sendProgressBar"></i></div>
-            <div class="small muted" id="sendProgressText">0%</div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:12px">
-          <strong>Received files</strong>
-          <ul id="receivedList" class="list" style="margin-top:10px"></ul>
         </div>
       </div>
 
-      <!-- Right: debug & logs -->
-      <div>
+      <!-- Right column -->
+      <div class="right">
         <div class="card">
-          <strong>Realtime logs</strong>
-          <div id="log" class="log" style="margin-top:8px"></div>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="clearLog" class="btn ghost">Clear</button>
-            <button id="showRoomBtn" class="btn ghost">Show room in DB</button>
+          <div class="section-title">Quick connect (QR / link)</div>
+          <div class="two-col">
+            <div class="qr" id="qrBox">QR appears here</div>
+            <div style="flex:1">
+              <label>Shareable link</label>
+              <input id="shareLink" readonly placeholder="https://..."/>
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button id="genQr" class="btn">Generate QR</button>
+                <button id="copyLink" class="btn">Copy link</button>
+                <button id="expireLink" class="btn danger">Expire link</button>
+              </div>
+              <p class="muted" id="linkStatus" style="margin-top:8px">Links expire automatically for safety.</p>
+            </div>
           </div>
         </div>
 
         <div class="card" style="margin-top:12px">
-          <strong>Quick diagnostics</strong>
-          <div style="margin-top:8px" class="small muted">Use these to gather info for troubleshooting</div>
-          <div style="margin-top:10px;display:flex;gap:8px">
-            <button id="testPing" class="btn">Send ping</button>
-            <button id="copyRoom" class="btn ghost">Copy room id</button>
+          <div class="section-title">Logs & diagnostics</div>
+          <div id="log" style="background:rgba(0,0,0,0.3);min-height:140px;border-radius:10px;padding:10px;font-family:ui-monospace,monospace"></div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button id="clearLog" class="btn">Clear</button>
+            <button id="showRoomBtn" class="btn">Show room in DB</button>
+            <button id="testPing" class="btn">Ping</button>
+            <button id="copyRoom" class="btn">Copy room id</button>
           </div>
-          <div style="margin-top:10px" class="small muted">Room contents (offer/answer/candidates) will be logged when you click "Show room in DB".</div>
         </div>
 
         <div class="card" style="margin-top:12px">
-          <strong>Tips</strong>
-          <ul class="small muted" style="margin-top:8px">
-            <li>Test with two devices on different networks (mobile data + Wi‑Fi).</li>
-            <li>Keep tabs open after going online; closing removes presence.</li>
-            <li>If connection fails, try TURN: paid TURN services are more reliable.</li>
+          <div class="section-title">Tips</div>
+          <ul class="muted" style="margin:0;padding-left:18px">
+            <li>Use different networks (Wi‑Fi + mobile data) to validate TURN.</li>
+            <li>Keep tabs open; presence uses onDisconnect to clean up.</li>
+            <li>Web transfer links should be short‑lived and tokenized.</li>
           </ul>
         </div>
       </div>
     </div>
 
-    <footer>© FileShare Pro — Upgraded. If you need a custom TURN server, I can show how to set one up.</footer>
+    <footer>© FileShare Pro — Next. Beautiful, reliable, and fast.</footer>
   </div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-
   <script>
-  // ---------- CONFIG ----------
-  const firebaseConfig = {
-    apiKey: "AIzaSyDh3WZ0lw2m81Oo-_VKJ_Q5786HW67g3O4",
-    authDomain: "filesharepro-b7281.firebaseapp.com",
-    databaseURL: "https://filesharepro-b7281-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "filesharepro-b7281",
-    storageBucket: "filesharepro-b7281.firebasestorage.app",
-    messagingSenderId: "173883523630",
-    appId: "1:173883523630:web:08d49fd1cacaa9d0c395bf",
-    measurementId: "G-GG4CMK1GTX"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  // ---------- ICE SERVERS ----------
-  const TURN_PUBLIC = [
-    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
-  ];
-  const STUN_ONLY = [{ urls: 'stun:stun.l.google.com:19302' }];
-  function getIceServers(useTurn=true){
-    return useTurn ? STUN_ONLY.concat(TURN_PUBLIC) : STUN_ONLY;
-  }
-
-  // ---------- STATE ----------
-  const selfId = randomId();
-  let selfName = '';
-  let presenceRef = null;
-  const presenceRoot = db.ref('presence');
-  let pc = null;
-  let dataChannel = null;
-  let currentPeerId = null;
-  let roomRef = null;
-  let callerCandidatesRef = null;
-  let calleeCandidatesRef = null;
-  let useTurn = true;
-
-  // Buffer for remote candidates to avoid race
-  let pendingRemoteCandidates = [];
-
-  // ---------- UI ----------
-  const els = {
-    displayName: document.getElementById('displayName'),
-    goOnlineBtn: document.getElementById('goOnlineBtn'),
-    goOfflineBtn: document.getElementById('goOfflineBtn'),
-    peerList: document.getElementById('peerList'),
-    connState: document.getElementById('connState'),
-    iceState: document.getElementById('iceState'),
-    dcState: document.getElementById('dcState'),
-    statusMsg: document.getElementById('statusMsg'),
-    meLabel: document.getElementById('meLabel'),
-    sendProgressWrap: document.getElementById('sendProgressWrap'),
-    sendProgressBar: document.getElementById('sendProgressBar'),
-    sendProgressText: document.getElementById('sendProgressText'),
-    fileInput: document.getElementById('fileInput'),
-    receivedList: document.getElementById('receivedList'),
-    log: document.getElementById('log'),
-    clearLog: document.getElementById('clearLog'),
-    showRoomBtn: document.getElementById('showRoomBtn'),
-    testPing: document.getElementById('testPing'),
-    copyRoom: document.getElementById('copyRoom'),
-    turnToggle: document.getElementById('turnToggle'),
-    refreshPeers: document.getElementById('refreshPeers'),
-    roomIdBadge: document.getElementById('roomIdBadge')
-  };
-
-  // ---------- HELPERS ----------
-  function log(...args){
-    const s = args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ');
-    console.log('[FS]', ...args);
-    els.log.textContent += s + '\n';
-    els.log.scrollTop = els.log.scrollHeight;
-  }
-  function setStatus(s){ els.statusMsg.textContent = s; log('STATUS:', s); }
-  function setConnState(s){ els.connState.textContent = 'Connection: ' + capitalize(s); }
-  function setIceState(s){ els.iceState.textContent = 'ICE: ' + capitalize(s); }
-  function setDcState(s){ els.dcState.textContent = 'DataChannel: ' + capitalize(s); }
-  function capitalize(s){ return s ? s[0].toUpperCase() + s.slice(1) : ''; }
-  function randomId(){ const a = new Uint8Array(12); crypto.getRandomValues(a); return Array.from(a, b => b.toString(16).padStart(2,'0')).join(''); }
-  function formatBytes(n){ if(n===0) return '0 B'; const units=['B','KB','MB','GB']; let i=0; while(n>=1024 && i<units.length-1){ n/=1024; i++; } return n.toFixed(1)+' '+units[i]; }
-  function hexFromBuffer(buf){ const arr = new Uint8Array(buf); return Array.from(arr, b => b.toString(16).padStart(2,'0')).join(''); }
-  function concatChunks(chunks){ const total = chunks.reduce((s,c)=>s+c.byteLength,0); const out = new Uint8Array(total); let off=0; for(const c of chunks){ out.set(new Uint8Array(c), off); off+=c.byteLength; } return out; }
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-  // ---------- PRESENCE ----------
-  els.goOnlineBtn.addEventListener('click', async () => {
-    selfName = (els.displayName.value.trim() || 'Anonymous');
-    presenceRef = db.ref('presence/' + selfId);
-    await presenceRef.set({ id:selfId, name:selfName, ts: Date.now() });
-    presenceRef.onDisconnect().remove();
-    subscribePresence();
-    els.meLabel.textContent = `${selfName} • id:${selfId}`;
-    setStatus('You are online as ' + selfName);
-    log('Went online', selfId);
-  });
-
-  els.goOfflineBtn.addEventListener('click', async () => {
-    await goOffline();
-    setStatus('You went offline');
-  });
-
-  async function goOffline(){
-    try{ if(presenceRef) await presenceRef.remove(); }catch(e){}
-    await cleanupRoom();
-    cleanupConnection();
-    els.peerList.innerHTML = '';
-  }
-
-  function subscribePresence(){
-    els.peerList.innerHTML = '';
-    presenceRoot.off();
-    presenceRoot.on('child_added', snap => renderPeer(snap.val()));
-    presenceRoot.on('child_changed', snap => renderPeer(snap.val()));
-    presenceRoot.on('child_removed', snap => {
-      const el = document.querySelector('[data-peer-id="'+snap.key+'"]');
-      if(el) el.remove();
+    const root = document.documentElement;
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
     });
-  }
-
-  function renderPeer(peer){
-    if(!peer || peer.id === selfId) return;
-    let li = document.querySelector('[data-peer-id="'+peer.id+'"]');
-    if(!li){
-      li = document.createElement('li');
-      li.dataset.peerId = peer.id;
-      const left = document.createElement('div');
-      left.innerHTML = `<strong>${escapeHtml(peer.name||'Unknown')}</strong><div class="small muted">id: ${peer.id}</div>`;
-      const btn = document.createElement('div');
-      btn.style.display='flex';
-      btn.style.gap='8px';
-      const connectBtn = document.createElement('button');
-      connectBtn.className='btn';
-      connectBtn.textContent='Connect';
-      connectBtn.onclick = () => connectToPeer(peer.id);
-      btn.appendChild(connectBtn);
-      li.appendChild(left);
-      li.appendChild(btn);
-      els.peerList.appendChild(li);
-    } else {
-      li.querySelector('strong').textContent = peer.name || 'Unknown';
-    }
-  }
-
-  // ---------- CONNECTIVITY / SIGNALING ----------
-  els.turnToggle.addEventListener('change', () => {
-    useTurn = (els.turnToggle.value !== 'none');
-    setStatus('TURN ' + (useTurn ? 'enabled' : 'disabled') + '. Reconnect to apply.');
-  });
-  els.refreshPeers.addEventListener('click', () => { subscribePresence(); setStatus('Refreshed peers'); });
-
-  function roomIdFor(a,b){ return [a,b].sort().join('_'); }
-
-  async function connectToPeer(peerId){
-    currentPeerId = peerId;
-    const rid = roomIdFor(selfId, peerId);
-    roomRef = db.ref('rooms/' + rid);
-    els.roomIdBadge.textContent = 'Room: ' + rid;
-    setStatus('Starting connection to ' + peerId);
-    log('Connecting to', peerId, 'room', rid);
-
-    // cleanup previous
-    cleanupConnection();
-    pendingRemoteCandidates = [];
-
-    pc = new RTCPeerConnection({ iceServers: getIceServers(useTurn) });
-    pc.onconnectionstatechange = () => setConnState(pc.connectionState);
-    pc.oniceconnectionstatechange = () => setIceState(pc.iceConnectionState);
-    pc.onicegatheringstatechange = () => log('ICE gathering:', pc.iceGatheringState);
-
-    const isCaller = (selfId < peerId);
-
-    // DataChannel wiring
-    if(isCaller){
-      dataChannel = pc.createDataChannel('file');
-      wireDataChannel(dataChannel);
-    } else {
-      pc.ondatachannel = evt => { dataChannel = evt.channel; wireDataChannel(dataChannel); };
-    }
-    updateDcStatus();
-
-    // Candidate refs
-    callerCandidatesRef = roomRef.child('callerCandidates');
-    calleeCandidatesRef = roomRef.child('calleeCandidates');
-
-    pc.onicecandidate = evt => {
-      if(!evt.candidate) return;
-      const target = isCaller ? callerCandidatesRef : calleeCandidatesRef;
-      target.push(evt.candidate.toJSON()).catch(err => log('push cand err', err));
-    };
-
-    // ---------- BUFFERED remote candidate handler ----------
-    const remoteRef = isCaller ? calleeCandidatesRef : callerCandidatesRef;
-    remoteRef.off();
-    remoteRef.on('child_added', snap => {
-      const cand = snap.val();
-      if (!cand) return;
-
-      // Buffer candidate if remoteDescription not ready
-      if (!pc || !pc.remoteDescription) {
-        pendingRemoteCandidates.push(cand);
-        log('[ICE] buffered candidate', cand);
-        return;
-      }
-
-      // Otherwise add immediately
-      pc.addIceCandidate(new RTCIceCandidate(cand)).catch(err => {
-        console.error('addIceCandidate err', err);
-        log('addIceCandidate err', err && err.message ? err.message : JSON.stringify(err));
-      });
-    });
-
-    // Offer/answer
-    if(isCaller){
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      await roomRef.child('offer').set(offer.toJSON());
-      setStatus('Offer created; waiting for answer...');
-      roomRef.child('answer').off();
-      roomRef.child('answer').on('value', async snap => {
-        const ans = snap.val();
-        if(ans && !pc.currentRemoteDescription){
-          await pc.setRemoteDescription(new RTCSessionDescription(ans));
-          // Flush buffered candidates now that remoteDescription is set
-          if (pendingRemoteCandidates.length) {
-            for (const c of pendingRemoteCandidates) {
-              try {
-                await pc.addIceCandidate(new RTCIceCandidate(c));
-              } catch (err) {
-                console.error('flush addIceCandidate err', err);
-                log('flush addIceCandidate err', err && err.message ? err.message : JSON.stringify(err));
-              }
-            }
-            pendingRemoteCandidates = [];
-          }
-          setStatus('Remote answer applied.');
-        }
-      });
-    } else {
-      roomRef.child('offer').off();
-      roomRef.child('offer').on('value', async snap => {
-        const off = snap.val();
-        if(!off || pc.currentRemoteDescription || pc.currentLocalDescription) return;
-        await pc.setRemoteDescription(new RTCSessionDescription(off));
-        // Flush buffered candidates after setting remote description
-        if (pendingRemoteCandidates.length) {
-          for (const c of pendingRemoteCandidates) {
-            try {
-              await pc.addIceCandidate(new RTCIceCandidate(c));
-            } catch (err) {
-              console.error('flush addIceCandidate err', err);
-              log('flush addIceCandidate err', err && err.message ? err.message : JSON.stringify(err));
-            }
-          }
-          pendingRemoteCandidates = [];
-        }
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        await roomRef.child('answer').set(answer.toJSON());
-        setStatus('Answer created and sent.');
-      });
-    }
-  }
-
-  function updateDcStatus(){ setDcState(dataChannel ? dataChannel.readyState : 'closed'); }
-
-  function wireDataChannel(dc){
-    dc.binaryType = 'arraybuffer';
-    dc.onopen = () => { updateDcStatus(); setStatus('DataChannel open'); log('DataChannel open'); };
-    dc.onclose = () => { updateDcStatus(); setStatus('DataChannel closed'); log('DataChannel closed'); };
-    dc.onerror = e => { setStatus('DataChannel error'); log('DC error', e); };
-
-    // Receiving
-    let incomingMeta = null;
-    let incomingChunks = [];
-    let incomingBytes = 0;
-
-    dc.onmessage = async evt => {
-      if(typeof evt.data === 'string'){
-        try{
-          const msg = JSON.parse(evt.data);
-          if(msg.type === 'file-meta'){
-            incomingMeta = msg;
-            incomingChunks = [];
-            incomingBytes = 0;
-            setStatus('Receiving ' + incomingMeta.name);
-            log('Incoming meta', incomingMeta);
-          } else if(msg.type === 'file-complete'){
-            const blob = new Blob(incomingChunks, { type: incomingMeta.mime || 'application/octet-stream' });
-            const url = URL.createObjectURL(blob);
-            const li = document.createElement('li');
-            li.innerHTML = `<span><strong>${escapeHtml(incomingMeta.name)}</strong> (${formatBytes(incomingMeta.size)})</span>
-                            <a class="btn ghost" href="${url}" download="${escapeHtml(incomingMeta.name)}"><i class="fas fa-download"></i> Download</a>`;
-            els.receivedList.appendChild(li);
-            setStatus('Received ' + incomingMeta.name);
-            incomingMeta = null;
-            incomingChunks = [];
-            incomingBytes = 0;
-          } else if(msg.type === 'ping'){
-            log('Received ping', msg);
-            dc.send(JSON.stringify({ type:'pong', ts: Date.now(), from: selfId }));
-          } else if(msg.type === 'pong'){
-            log('PONG', msg);
-          }
-        }catch(e){ log('parse msg err', e); }
-      } else {
-        incomingChunks.push(evt.data);
-        incomingBytes += evt.data.byteLength || evt.data.length || 0;
-        if(incomingMeta){
-          const pct = Math.round((incomingBytes / incomingMeta.size) * 100);
-          els.sendProgressText.textContent = 'Receiving: ' + pct + '%';
-        }
-      }
-    };
-  }
-
-  // ---------- FILE SENDING ----------
-  els.fileInput.addEventListener('change', async () => {
-    if(!dataChannel || dataChannel.readyState !== 'open'){ alert('Not connected. Click Connect first.'); return; }
-    const file = els.fileInput.files[0];
-    if(!file) return;
-    setStatus('Preparing file: ' + file.name);
-    const sha = await sha256HexStream(file);
-    log('File SHA256', sha);
-    dataChannel.send(JSON.stringify({ type:'file-meta', name:file.name, size:file.size, mime:file.type, sha256:sha }));
-    const reader = file.stream().getReader();
-    let sent = 0;
-    els.sendProgressWrap.style.display = 'block';
-    while(true){
-      const { done, value } = await reader.read();
-      if(done) break;
-      await waitForBuffer(dataChannel);
-      dataChannel.send(value.buffer);
-      sent += value.byteLength;
-      const pct = Math.round((sent / file.size) * 100);
-      els.sendProgressBar.style.width = pct + '%';
-      els.sendProgressText.textContent = pct + '%';
-    }
-    dataChannel.send(JSON.stringify({ type:'file-complete' }));
-    setStatus('File sent: ' + file.name);
-  });
-
-  function waitForBuffer(dc){
-    const MAX = 8 * 1024 * 1024;
-    return new Promise(resolve => {
-      if(dc.bufferedAmount < MAX) return resolve();
-      const onLow = () => { dc.removeEventListener('bufferedamountlow', onLow); resolve(); };
-      try{ dc.bufferedAmountLowThreshold = 512 * 1024; }catch(e){}
-      dc.addEventListener('bufferedamountlow', onLow);
-      const t = setInterval(()=>{ if(dc.bufferedAmount < MAX){ clearInterval(t); dc.removeEventListener('bufferedamountlow', onLow); resolve(); } }, 150);
-    });
-  }
-
-  // ---------- ROOM CLEANUP ----------
-  async function cleanupRoom(){
-    if(!roomRef) return;
-    try{
-      await roomRef.child('offer').remove();
-      await roomRef.child('answer').remove();
-      await roomRef.child('callerCandidates').remove();
-      await roomRef.child('calleeCandidates').remove();
-      log('Room cleaned');
-    }catch(e){ log('cleanup room err', e); }
-    roomRef = null;
-    els.roomIdBadge.textContent = 'Room: —';
-  }
-
-  function cleanupConnection(){
-    try{ if(dataChannel) dataChannel.close(); }catch(e){}
-    try{ if(pc) pc.close(); }catch(e){}
-    pc = null; dataChannel = null;
-    updateDcStatus();
-    setConnState('disconnected');
-    setIceState('new');
-    setDcState('closed');
-    els.sendProgressWrap.style.display = 'none';
-    els.sendProgressBar.style.width = '0%';
-    els.sendProgressText.textContent = '0%';
-  }
-
-  function updateDcStatus(){ setDcState(dataChannel ? dataChannel.readyState : 'closed'); }
-
-  // ---------- UTIL: SHA256 ----------
-  async function sha256HexStream(file){
-    const reader = file.stream().getReader();
-    const chunks = [];
-    while(true){
-      const { done, value } = await reader.read();
-      if(done) break;
-      chunks.push(value);
-    }
-    const full = concatChunks(chunks);
-    const digest = await crypto.subtle.digest('SHA-256', full);
-    return hexFromBuffer(digest);
-  }
-
-  // ---------- DEBUG CONTROLS ----------
-  els.clearLog.addEventListener('click', ()=>{ els.log.textContent=''; });
-  els.testPing.addEventListener('click', ()=>{ if(dataChannel && dataChannel.readyState==='open'){ dataChannel.send(JSON.stringify({ type:'ping', ts:Date.now(), from:selfId })); setStatus('Ping sent'); } else setStatus('DataChannel not open'); });
-  els.copyRoom.addEventListener('click', ()=>{ if(roomRef){ const rid = roomRef.path.toString().split('/').pop(); navigator.clipboard.writeText(rid).then(()=>setStatus('Room id copied')); } else setStatus('No active room'); });
-
-  els.showRoomBtn.addEventListener('click', async ()=>{
-    if(!roomRef){ setStatus('No active room'); return; }
-    const snap = await roomRef.get();
-    log('Room contents:', snap.val());
-    setStatus('Room contents logged');
-  });
-
-  // ---------- ONLOAD: defaults ----------
-  els.displayName.value = 'Mystery-' + selfId.slice(0,6);
-  setStatus('Ready. Enter a name and click Go online.');
-
+    // Hook your existing JS to these IDs:
+    // displayName, goOnlineBtn, goOfflineBtn, statusMsg, connState, iceState, dcState, roomIdBadge
+    // refreshPeers, turnToggle, modeSelect, peerList, fileInput, sendProgressWrap, sendProgressBar, sendProgressText
+    // cancelSend, resumeSend, receivedList, genQr, shareLink, copyLink, expireLink, qrBox, linkStatus
+    // log, clearLog, showRoomBtn, testPing, copyRoom
   </script>
 </body>
 </html>
