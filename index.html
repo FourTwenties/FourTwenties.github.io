@@ -3,13 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FileShare Pro — Upgraded</title>
+  <title>FileShare Pro — Upgraded (Fixed)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     :root{
       --bg:#0f1220; --card:rgba(255,255,255,0.04); --accent:#4a6cfa; --accent-2:#2d4bcc;
-      --muted:#9aa3b2; --success:#20c997; --danger:#ff6b6b; --glass:rgba(255,255,255,0.03);
-      --radius:12px; --pad:14px;
+      --muted:#9aa3b2; --glass:rgba(255,255,255,0.03); --radius:12px; --pad:14px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -184,6 +183,9 @@
   let calleeCandidatesRef = null;
   let useTurn = true;
 
+  // Buffer for remote candidates to avoid race
+  let pendingRemoteCandidates = [];
+
   // ---------- UI ----------
   const els = {
     displayName: document.getElementById('displayName'),
@@ -226,6 +228,7 @@
   function formatBytes(n){ if(n===0) return '0 B'; const units=['B','KB','MB','GB']; let i=0; while(n>=1024 && i<units.length-1){ n/=1024; i++; } return n.toFixed(1)+' '+units[i]; }
   function hexFromBuffer(buf){ const arr = new Uint8Array(buf); return Array.from(arr, b => b.toString(16).padStart(2,'0')).join(''); }
   function concatChunks(chunks){ const total = chunks.reduce((s,c)=>s+c.byteLength,0); const out = new Uint8Array(total); let off=0; for(const c of chunks){ out.set(new Uint8Array(c), off); off+=c.byteLength; } return out; }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
   // ---------- PRESENCE ----------
   els.goOnlineBtn.addEventListener('click', async () => {
@@ -286,8 +289,6 @@
     }
   }
 
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
   // ---------- CONNECTIVITY / SIGNALING ----------
   els.turnToggle.addEventListener('change', () => {
     useTurn = (els.turnToggle.value !== 'none');
@@ -307,6 +308,7 @@
 
     // cleanup previous
     cleanupConnection();
+    pendingRemoteCandidates = [];
 
     pc = new RTCPeerConnection({ iceServers: getIceServers(useTurn) });
     pc.onconnectionstatechange = () => setConnState(pc.connectionState);
@@ -334,12 +336,25 @@
       target.push(evt.candidate.toJSON()).catch(err => log('push cand err', err));
     };
 
-    // Listen for remote candidates
+    // ---------- BUFFERED remote candidate handler ----------
     const remoteRef = isCaller ? calleeCandidatesRef : callerCandidatesRef;
     remoteRef.off();
     remoteRef.on('child_added', snap => {
       const cand = snap.val();
-      pc.addIceCandidate(new RTCIceCandidate(cand)).catch(err => log('addIceCandidate err', err));
+      if (!cand) return;
+
+      // Buffer candidate if remoteDescription not ready
+      if (!pc || !pc.remoteDescription) {
+        pendingRemoteCandidates.push(cand);
+        log('[ICE] buffered candidate', cand);
+        return;
+      }
+
+      // Otherwise add immediately
+      pc.addIceCandidate(new RTCIceCandidate(cand)).catch(err => {
+        console.error('addIceCandidate err', err);
+        log('addIceCandidate err', err && err.message ? err.message : JSON.stringify(err));
+      });
     });
 
     // Offer/answer
@@ -353,6 +368,18 @@
         const ans = snap.val();
         if(ans && !pc.currentRemoteDescription){
           await pc.setRemoteDescription(new RTCSessionDescription(ans));
+          // Flush buffered candidates now that remoteDescription is set
+          if (pendingRemoteCandidates.length) {
+            for (const c of pendingRemoteCandidates) {
+              try {
+                await pc.addIceCandidate(new RTCIceCandidate(c));
+              } catch (err) {
+                console.error('flush addIceCandidate err', err);
+                log('flush addIceCandidate err', err && err.message ? err.message : JSON.stringify(err));
+              }
+            }
+            pendingRemoteCandidates = [];
+          }
           setStatus('Remote answer applied.');
         }
       });
@@ -362,6 +389,18 @@
         const off = snap.val();
         if(!off || pc.currentRemoteDescription || pc.currentLocalDescription) return;
         await pc.setRemoteDescription(new RTCSessionDescription(off));
+        // Flush buffered candidates after setting remote description
+        if (pendingRemoteCandidates.length) {
+          for (const c of pendingRemoteCandidates) {
+            try {
+              await pc.addIceCandidate(new RTCIceCandidate(c));
+            } catch (err) {
+              console.error('flush addIceCandidate err', err);
+              log('flush addIceCandidate err', err && err.message ? err.message : JSON.stringify(err));
+            }
+          }
+          pendingRemoteCandidates = [];
+        }
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await roomRef.child('answer').set(answer.toJSON());
@@ -406,7 +445,6 @@
             incomingBytes = 0;
           } else if(msg.type === 'ping'){
             log('Received ping', msg);
-            // reply
             dc.send(JSON.stringify({ type:'pong', ts: Date.now(), from: selfId }));
           } else if(msg.type === 'pong'){
             log('PONG', msg);
@@ -429,12 +467,9 @@
     const file = els.fileInput.files[0];
     if(!file) return;
     setStatus('Preparing file: ' + file.name);
-    // compute SHA-256
     const sha = await sha256HexStream(file);
     log('File SHA256', sha);
-    // send meta
     dataChannel.send(JSON.stringify({ type:'file-meta', name:file.name, size:file.size, mime:file.type, sha256:sha }));
-    // stream chunks
     const reader = file.stream().getReader();
     let sent = 0;
     els.sendProgressWrap.style.display = 'block';
@@ -518,18 +553,10 @@
     setStatus('Room contents logged');
   });
 
-  // ---------- UTILITY: show DB entries for debugging ----------
-  // (not automatic; user clicks Show room in DB)
-
-  // ---------- RANDOM ID label ----------
-  // show id in UI for debugging
-  document.getElementById('meLabel').title = 'Your id: ' + selfId;
-
-  // ---------- ONLOAD: small defaults ----------
+  // ---------- ONLOAD: defaults ----------
   els.displayName.value = 'Mystery-' + selfId.slice(0,6);
   setStatus('Ready. Enter a name and click Go online.');
 
-  // ---------- END ----------
   </script>
 </body>
 </html>
