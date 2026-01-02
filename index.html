@@ -76,6 +76,7 @@
         <span id="iceState" class="pill">ICE: New</span>
         <span id="dcState" class="pill">DataChannel: Closed</span>
       </div>
+      <p id="statusMsg" class="muted"></p>
     </div>
 
     <!-- Send / Receive -->
@@ -97,7 +98,7 @@
 
     <footer>
       <p>© FileShare Pro — Devices discovered via Firebase presence; files sent directly P2P via WebRTC.</p>
-      <p class="muted">Tip: If connection fails on strict networks, add a TURN server for reliability.</p>
+      <p class="muted">If connection fails on strict networks, TURN will relay traffic for reliability.</p>
     </footer>
   </div>
 
@@ -106,7 +107,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
   <script>
-    // ✅ Your Firebase config (with correct asia-southeast1 databaseURL)
+    // Firebase config (use your asia-southeast1 databaseURL)
     const firebaseConfig = {
       apiKey: "AIzaSyDh3WZ0lw2m81Oo-_VKJ_Q5786HW67g3O4",
       authDomain: "filesharepro-b7281.firebaseapp.com",
@@ -117,13 +118,364 @@
       appId: "1:173883523630:web:08d49fd1cacaa9d0c395bf",
       measurementId: "G-GG4CMK1GTX"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // ✅ ICE servers (STUN + TURN for reliability)
+    // ICE: STUN + TURN for reliability
     const iceServers = [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
       { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-      { urls: '
+      { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+    ];
+
+    // State
+    const selfId = cryptoRandomId();
+    let selfName = '';
+    let presenceRef = null;
+    const peersRef = db.ref('presence');
+    let pc = null;
+    let dataChannel = null;
+    let currentPeerId = null;
+    let roomRef = null;
+    let callerCandidatesRef = null;
+    let calleeCandidatesRef = null;
+
+    // UI
+    const els = {
+      displayName: document.getElementById('displayName'),
+      goOnlineBtn: document.getElementById('goOnlineBtn'),
+      goOfflineBtn: document.getElementById('goOfflineBtn'),
+      peerList: document.getElementById('peerList'),
+      connState: document.getElementById('connState'),
+      iceState: document.getElementById('iceState'),
+      dcState: document.getElementById('dcState'),
+      statusMsg: document.getElementById('statusMsg'),
+      fileInput: document.getElementById('fileInput'),
+      sendArea: document.getElementById('sendArea'),
+      sendProgressWrap: document.getElementById('sendProgressWrap'),
+      sendProgress: document.getElementById('sendProgress'),
+      sendProgressText: document.getElementById('sendProgressText'),
+      receivedList: document.getElementById('receivedList')
+    };
+
+    // Presence: go online/offline
+    els.goOnlineBtn.addEventListener('click', async () => {
+      selfName = (els.displayName.value.trim() || 'Anonymous');
+      presenceRef = db.ref('presence/' + selfId);
+      await presenceRef.set({ id: selfId, name: selfName, ts: Date.now() });
+      presenceRef.onDisconnect().remove();
+      subscribePresence();
+      setStatus('Online as ' + selfName);
+    });
+
+    els.goOfflineBtn.addEventListener('click', async () => {
+      await goOffline();
+      setStatus('Went offline.');
+    });
+
+    async function goOffline() {
+      if (presenceRef) { try { await presenceRef.remove(); } catch(e){} }
+      await cleanupRoom();
+      cleanupConnection();
+      els.peerList.innerHTML = '';
+    }
+
+    function subscribePresence() {
+      els.peerList.innerHTML = '';
+      peersRef.off();
+      peersRef.on('child_added', snap => renderPeer(snap.val()));
+      peersRef.on('child_changed', snap => renderPeer(snap.val()));
+      peersRef.on('child_removed', snap => {
+        const li = document.querySelector('[data-peer-id="'+ snap.key +'"]');
+        if (li) li.remove();
+      });
+    }
+
+    function renderPeer(peer) {
+      if (!peer || peer.id === selfId) return;
+      let li = document.querySelector('[data-peer-id="'+ peer.id +'"]');
+      if (!li) {
+        li = document.createElement('li');
+        li.dataset.peerId = peer.id;
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = peer.name || 'Unknown';
+        const btns = document.createElement('div');
+        const connectBtn = document.createElement('button');
+        connectBtn.className = 'btn';
+        connectBtn.innerHTML = '<i class="fas fa-link"></i> Connect';
+        connectBtn.addEventListener('click', () => connectToPeer(peer.id));
+        btns.appendChild(connectBtn);
+        li.appendChild(nameSpan);
+        li.appendChild(btns);
+        els.peerList.appendChild(li);
+      } else {
+        li.querySelector('span').textContent = peer.name || 'Unknown';
+      }
+    }
+
+    // Deterministic room ID for a pair of peers
+    function roomIdFor(a, b) { return [a, b].sort().join('_'); }
+
+    async function connectToPeer(peerId) {
+      currentPeerId = peerId;
+      const roomId = roomIdFor(selfId, peerId);
+      roomRef = db.ref('rooms/' + roomId);
+
+      // Clean previous
+      cleanupConnection();
+
+      pc = new RTCPeerConnection({ iceServers });
+      pc.onconnectionstatechange = () => els.connState.textContent = capitalize(pc.connectionState);
+      pc.oniceconnectionstatechange = () => els.iceState.textContent = 'ICE: ' + capitalize(pc.iceConnectionState);
+      pc.onicegatheringstatechange = () => setStatus('ICE gathering: ' + pc.iceGatheringState);
+
+      // Roles: lexicographically smaller id is caller
+      const isCaller = (selfId < peerId);
+
+      // DataChannel
+      if (isCaller) {
+        dataChannel = pc.createDataChannel('file');
+        wireDataChannel(dataChannel);
+      } else {
+        pc.ondatachannel = evt => { dataChannel = evt.channel; wireDataChannel(dataChannel); };
+      }
+      updateDcStatus();
+
+      // ICE candidates paths
+      callerCandidatesRef = roomRef.child('callerCandidates');
+      calleeCandidatesRef = roomRef.child('calleeCandidates');
+
+      pc.onicecandidate = evt => {
+        if (!evt.candidate) return;
+        const target = isCaller ? callerCandidatesRef : calleeCandidatesRef;
+        target.push(evt.candidate.toJSON());
+      };
+
+      // Subscribe to remote ICE
+      const remoteRef = isCaller ? calleeCandidatesRef : callerCandidatesRef;
+      remoteRef.off();
+      remoteRef.on('child_added', snap => {
+        const cand = snap.val();
+        pc.addIceCandidate(new RTCIceCandidate(cand)).catch(err => setStatus('ICE error: ' + err.message));
+      });
+
+      // Offer/answer exchange
+      if (isCaller) {
+        const offer = await pc.createOffer({ offerToReceiveAudio:false, offerToReceiveVideo:false });
+        await pc.setLocalDescription(offer);
+        await roomRef.child('offer').set(offer.toJSON());
+        setStatus('Offer created. Awaiting answer…');
+
+        roomRef.child('answer').off();
+        roomRef.child('answer').on('value', async snap => {
+          const ans = snap.val();
+          if (ans && !pc.currentRemoteDescription) {
+            await pc.setRemoteDescription(new RTCSessionDescription(ans));
+            setStatus('Connected. Choose a file to send.');
+          }
+        });
+      } else {
+        roomRef.child('offer').off();
+        roomRef.child('offer').on('value', async snap => {
+          const off = snap.val();
+          if (!off || pc.currentRemoteDescription || pc.currentLocalDescription) return;
+          await pc.setRemoteDescription(new RTCSessionDescription(off));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          await roomRef.child('answer').set(answer.toJSON());
+          setStatus('Connected. Choose a file to send.');
+        });
+      }
+    }
+
+    function wireDataChannel(dc) {
+      dc.binaryType = 'arraybuffer';
+      dc.onopen = () => { updateDcStatus(); setStatus('DataChannel open. Ready to transfer.'); };
+      dc.onclose = () => { updateDcStatus(); setStatus('DataChannel closed.'); };
+      dc.onerror = e => setStatus('DataChannel error: ' + e.message);
+
+      // Receiving with integrity check (SHA-256)
+      let incomingMeta = null;
+      let incomingChunks = [];
+      let incomingBytes = 0;
+      let hash = null;
+
+      dc.onmessage = async evt => {
+        const data = evt.data;
+        if (typeof data === 'string') {
+          const msg = JSON.parse(data);
+          if (msg.type === 'file-meta') {
+            incomingMeta = msg;
+            incomingChunks = [];
+            incomingBytes = 0;
+            hash = await crypto.subtle.digest('SHA-256', new Uint8Array([])); // initialize
+          } else if (msg.type === 'file-complete') {
+            const blob = new Blob(incomingChunks, { type: incomingMeta.mime });
+            const url = URL.createObjectURL(blob);
+
+            // Verify hash if provided
+            let verified = 'Unknown';
+            if (incomingMeta.sha256) {
+              const computed = await sha256HexFromChunks(incomingChunks);
+              verified = (computed === incomingMeta.sha256) ? 'Verified' : 'Mismatch';
+            }
+
+            const li = document.createElement('li');
+            li.innerHTML = `<span><strong>${escapeHtml(incomingMeta.name)}</strong> (${formatBytes(incomingMeta.size)}) — Integrity: ${verified}</span>
+                            <a class="btn btn-outline" href="${url}" download="${escapeHtml(incomingMeta.name)}"><i class="fas fa-download"></i> Download</a>`;
+            els.receivedList.appendChild(li);
+
+            incomingMeta = null;
+            incomingChunks = [];
+            incomingBytes = 0;
+            hash = null;
+          }
+        } else {
+          const chunk = new Uint8Array(data);
+          incomingChunks.push(chunk);
+          incomingBytes += chunk.byteLength;
+        }
+      };
+    }
+
+    // Send file with chunking + SHA-256
+    els.fileInput.addEventListener('change', async () => {
+      if (!dataChannel || dataChannel.readyState !== 'open') {
+        alert('Not connected. Click Connect on a device first.');
+        return;
+      }
+      const file = els.fileInput.files[0];
+      if (!file) return;
+
+      // Precompute SHA-256 (stream)
+      const shaHex = await sha256HexStream(file);
+
+      // Announce metadata
+      dataChannel.send(JSON.stringify({
+        type:'file-meta',
+        name:file.name,
+        size:file.size,
+        mime:file.type || 'application/octet-stream',
+        sha256: shaHex
+      }));
+
+      const reader = file.stream().getReader();
+      let sent = 0;
+      els.sendProgressWrap.style.display = 'block';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        await flowControl(dataChannel);
+        dataChannel.send(value.buffer);
+        sent += value.byteLength;
+        const pct = Math.round((sent / file.size) * 100);
+        els.sendProgress.value = pct;
+        els.sendProgressText.textContent = pct + '%';
+      }
+
+      dataChannel.send(JSON.stringify({ type:'file-complete' }));
+      els.sendProgressText.textContent = 'Done';
+      setStatus('Transfer complete.');
+    });
+
+    // Backpressure control
+    function flowControl(dc) {
+      const MAX = 8 * 1024 * 1024; // 8MB buffered
+      return new Promise(resolve => {
+        if (dc.bufferedAmount < MAX) return resolve();
+        const check = () => {
+          if (dc.bufferedAmount < MAX) {
+            dc.removeEventListener('bufferedamountlow', check);
+            resolve();
+          }
+        };
+        try { dc.bufferedAmountLowThreshold = 1 * 1024 * 1024; } catch {}
+        dc.addEventListener('bufferedamountlow', check);
+        const interval = setInterval(() => {
+          if (dc.bufferedAmount < MAX) { clearInterval(interval); resolve(); }
+        }, 100);
+      });
+    }
+
+    async function cleanupRoom() {
+      if (roomRef) {
+        try {
+          await roomRef.child('offer').remove();
+          await roomRef.child('answer').remove();
+          await roomRef.child('callerCandidates').remove();
+          await roomRef.child('calleeCandidates').remove();
+        } catch(e){}
+        roomRef = null;
+      }
+    }
+
+    function cleanupConnection() {
+      if (dataChannel) { try { dataChannel.close(); } catch(e){} }
+      if (pc) { try { pc.close(); } catch(e){} }
+      pc = null; dataChannel = null;
+      updateDcStatus();
+      els.connState.textContent = 'Disconnected';
+      els.iceState.textContent = 'ICE: New';
+      els.sendArea.textContent = 'Connect to a device, then choose a file to send.';
+      els.sendProgressWrap.style.display = 'none';
+      els.sendProgress.value = 0;
+      els.sendProgressText.textContent = '0%';
+      // Keep received list; it’s user content
+    }
+
+    function updateDcStatus() {
+      const state = dataChannel ? dataChannel.readyState : 'closed';
+      els.dcState.textContent = 'DataChannel: ' + capitalize(state);
+    }
+    function capitalize(s) { return s ? s[0].toUpperCase() + s.slice(1) : ''; }
+    function formatBytes(n) {
+      const u = ['B','KB','MB','GB','TB']; let i=0; let v=n;
+      while (v>=1024 && i<u.length-1) { v/=1024; i++;
+      }
+      return `${v.toFixed(1)} ${u[i]}`;
+    }
+    function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function cryptoRandomId() {
+      const a = new Uint8Array(16); crypto.getRandomValues(a);
+      return Array.from(a, b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    // SHA-256 utilities
+    async function sha256HexStream(file) {
+      const reader = file.stream().getReader();
+      const chunks = [];
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+      const full = concatChunks(chunks);
+      const digest = await crypto.subtle.digest('SHA-256', full);
+      return hexFromBuffer(digest);
+    }
+    async function sha256HexFromChunks(chunks) {
+      const full = concatChunks(chunks);
+      const digest = await crypto.subtle.digest('SHA-256', full);
+      return hexFromBuffer(digest);
+    }
+    function concatChunks(chunks) {
+      const total = chunks.reduce((sum, c) => sum + c.byteLength, 0);
+      const out = new Uint8Array(total);
+      let offset = 0;
+      for (const c of chunks) { out.set(new Uint8Array(c), offset); offset += c.byteLength; }
+      return out;
+    }
+    function hexFromBuffer(buf) {
+      const arr = new Uint8Array(buf);
+      return Array.from(arr, b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    function setStatus(msg) {
+      els.statusMsg.textContent = msg;
+      console.log('[Status]', msg);
+    }
+  </script>
+</body>
+</html>
